@@ -1,0 +1,51 @@
+{
+    "name": "@consensys/sol-datalog",
+    "version": "0.0.0",
+    "description": "",
+    "keywords": [],
+    "files": [
+        "dist"
+    ],
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "bin": {
+        "sol-datalog": "dist/bin/sol_datalog.js"
+    },
+    "scripts": {
+        "clean": "rm -rf dist/",
+        "transpile": "tsc",
+        "build": "npm run clean && npm run transpile && chmod a+x dist/bin/sol_datalog.js",
+        "lint": "eslint src/ test/ --ext=ts",
+        "lint:fix": "eslint src/ test/ --ext=ts --fix",
+        "test": "c8 mocha",
+        "prepare": "npm run build"
+    },
+    "dependencies": {
+        "@ts-ast-parser/core": "^0.6.2",
+        "fs-extra": "^11.1.1",
+        "logplease": "1.2.15",
+        "minimist": "^1.2.8",
+        "semver": "^7.5.4",
+        "solc-typed-ast": "^17.0.2"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^11.0.2",
+        "@types/minimist": "^1.2.3",
+        "@types/mocha": "^10.0.2",
+        "@types/node": "^16.18.58",
+        "@types/semver": "^7.5.3",
+        "@typescript-eslint/eslint-plugin": "^6.7.5",
+        "@typescript-eslint/parser": "^6.7.5",
+        "c8": "^8.0.1",
+        "eslint": "^8.51.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-prettier": "^5.0.0",
+        "expect": "^29.7.0",
+        "mocha": "^10.2.0",
+        "prettier": "3.0.3",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.2.2"
+    },
+    "repository": "<TODO>",
+    "license": "SEE LICENSE IN <LICENSE>"
+}
