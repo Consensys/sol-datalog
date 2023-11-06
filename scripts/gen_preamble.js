@@ -155,6 +155,8 @@ const staticPreamble = `
     head : id, 
     tail : IdList
 ]
+
+.decl parent(parentId: id, childId: id)
 `;
 
 const skipFields = ["raw", "documentation", "nameLocation", "children"];
@@ -260,7 +262,11 @@ function buildNodeDecls(name, constructor, baseName) {
 
         let datalogT;
 
-        if (optional && !(name === "ElementaryTypeName" && paramName === "stateMutability")) {
+        if (name === "ElementaryTypeName" && paramName === "stateMutability") {
+            optional = false;
+        }
+
+        if (optional) {
             assert(
                 type.endsWith(" | undefined"),
                 `Optional type should end with | undefined for ${type}`
@@ -398,5 +404,5 @@ function buildNodeDecls(name, constructor, baseName) {
         res.push(...buildNodeDecls(name, constructor, bases[0].getName()));
     }
 
-    console.log("export const preamble = `", res.join("\n"), "`");
+    console.log("export const preamble = `", res.join("\n"), "`;");
 })();
