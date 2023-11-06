@@ -1,0 +1,59 @@
+{
+    "name": "sol-datalog",
+    "version": "0.0.0",
+    "description": "Translator from Solidity AST to Datalog for later use with Souffle",
+    "files": [
+        "dist"
+    ],
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "bin": {
+        "sol-datalog-cli": "dist/bin/cli.js"
+    },
+    "scripts": {
+        "clean": "rm -rf dist/",
+        "transpile": "tsc",
+        "build": "npm run clean && npm run transpile && chmod a+x dist/bin/cli.js",
+        "test": "c8 mocha",
+        "lint": "eslint src/ test/ --ext=ts",
+        "lint:fix": "eslint src/ test/ --ext=ts --fix",
+        "coverage": "c8 report",
+        "prepare": "npm run build"
+    },
+    "dependencies": {
+        "commander": "^11.1.0",
+        "solc-typed-ast": "^17.0.2",
+        "fs-extra": "^11.1.1"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^11.0.3",
+        "@types/mocha": "^10.0.3",
+        "@types/node": "^16.18.60",
+        "@typescript-eslint/eslint-plugin": "^6.9.1",
+        "@typescript-eslint/parser": "^6.9.1",
+        "eslint": "^8.53.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-prettier": "^5.0.1",
+        "expect": "^29.7.0",
+        "mocha": "^10.2.0",
+        "c8": "^8.0.1",
+        "prettier": "3.0.3",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.2.2"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Consensys/sol-datalog.git"
+    },
+    "keywords": [
+        "solidity",
+        "datalog",
+        "souffle"
+    ],
+    "author": "",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/Consensys/sol-datalog/issues"
+    },
+    "homepage": "https://github.com/Consensys/sol-datalog#readme"
+}
