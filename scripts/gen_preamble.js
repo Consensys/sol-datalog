@@ -70,23 +70,24 @@ const staticPreamble = `
 .type id <: number
 .type bool <: number
 .type ExpressionId <: id
+.type StatementId <: id
 .type TypeNameId <: id
 
-.type ContractKind <: symbol;
-.type LiteralKind <: symbol;
-.type TimeUnit <: symbol;
-.type EtherUnit <: symbol;
-.type FunctionCallKind <: symbol;
-.type DataLocation <: symbol;
-.type Mutability <: symbol;
-.type FunctionKind <: symbol;
-.type ModifierInvocationKind <: symbol;
-.type StateVariableVisibility <: symbol;
-.type FunctionVisibility <: symbol;
-.type ElementaryTypeNameMutability <: symbol;
+.type ContractKind <: symbol
+.type LiteralKind <: symbol
+.type TimeUnit <: symbol
+.type EtherUnit <: symbol
+.type FunctionCallKind <: symbol
+.type DataLocation <: symbol
+.type Mutability <: symbol
+.type FunctionStateMutability <: symbol
+.type FunctionKind <: symbol
+.type ModifierInvocationKind <: symbol
+.type StateVariableVisibility <: symbol
+.type FunctionVisibility <: symbol
+.type ElementaryTypeNameMutability <: symbol
 
-.type SubdenominationT = TimeUnit | EtherUnit;
-.type ElementaryTypeNameOrStrT = symbol | ElementaryTypeNameId;
+.type SubdenominationT = TimeUnit | EtherUnit
 
 .type StringList = [
     head : symbol,
@@ -130,6 +131,26 @@ const staticPreamble = `
     tail : ExpressionIdList
 ]
 
+.type StatementIdList = [
+    head : StatementId,
+    tail : StatementIdList
+]
+
+.type ModifierInvocationIdList = [
+    head : ModifierInvocationId,
+    tail : ModifierInvocationIdList
+]
+
+.type EnumValueIdList = [
+    head : EnumValueId,
+    tail : EnumValueIdList
+]
+
+.type TryCatchClauseIdList = [
+    head : TryCatchClauseId,
+    tail : TryCatchClauseIdList
+]
+
 .type IdList = [
     head : id, 
     tail : IdList
@@ -139,8 +160,17 @@ const staticPreamble = `
 const skipFields = ["raw", "documentation", "nameLocation", "children"];
 
 // @todo cleanup
-let astClassNames = new Set([]);
-let simpleTypeMap = new Map([
+const astClassNames = new Set(["ASTNodeWithChildren", "ASTNode", "StatementWithChildren"]);
+const abstractClassNames = new Set([
+    "ASTNodeWithChildren",
+    "ASTNode",
+    "Expression",
+    "Statement",
+    "PrimaryExpression",
+    "StatementWithChildren",
+    "TypeName"
+]);
+const simpleTypeMap = new Map([
     ["number", "number"],
     ["string", "symbol"],
     ["string[]", "StringList"],
@@ -155,6 +185,16 @@ let simpleTypeMap = new Map([
     ["FunctionStateMutability", "FunctionStateMutability"],
     ["LiteralKind", "LiteralKind"],
     ["ModifierInvocationKind", "ModifierInvocationKind"]
+]);
+
+const abstractASTNodeToIdType = new Map([
+    ["ASTNode", "id"],
+    ["ASTNodeWithChildren", "id"],
+    ["Expression", "ExpressionId"],
+    ["Statement", "StatementId"],
+    ["StatementWithChildren", "StatementId"],
+    ["PrimaryExpression", "ExpressionId"], // @todo Do we want a separate PrimaryExpressionId?
+    ["TypeName", "TypeNameId"]
 ]);
 
 const iterableRE = /Iterable<(.*)>/;
@@ -196,13 +236,20 @@ function translateType(tsT) {
  * Given the name of some ASTNode class, and a reference to the parsed constructor
  * generate the neccessary DataLog declartaions and types for this class.
  */
-function buildNodeDecls(name, constructor) {
+function buildNodeDecls(name, constructor, baseName) {
     const rawParams = constructor.getParameters();
     const params = rawParams.map((p) => [p.getName(), p.isOptional(), p.getType().getText()]);
 
-    assert(params.length >= 2 && params[0][0] === "id" && params[1][0] === "src");
+    assert(
+        params.length >= 2 && params[0][0] === "id" && params[1][0] === "src",
+        `First 2 params are id and src for ${name}`
+    );
 
-    const res = [`.type ${name}Id <: id`];
+    const idBaseType = abstractASTNodeToIdType.get(baseName);
+
+    assert(idBaseType !== undefined, `No base id type for base ${baseName}`);
+
+    const res = [`.type ${name}Id <: ${idBaseType}`];
 
     let dynamicArgs = [];
 
@@ -213,13 +260,16 @@ function buildNodeDecls(name, constructor) {
 
         let datalogT;
 
-        if (optional) {
-            assert(type.endsWith(" | undefined"));
+        if (optional && !(name === "ElementaryTypeName" && paramName === "stateMutability")) {
+            assert(
+                type.endsWith(" | undefined"),
+                `Optional type should end with | undefined for ${type}`
+            );
             type = type.slice(0, -12);
         }
 
         if (name === "SourceUnit" && paramName === `exportedSymbols`) {
-            datalogT = `ExportedIdList`;
+            datalogT = `ExportedSymbolsList`;
         } else if (name === "ContractDefinition" && paramName === `linearizedBaseContracts`) {
             datalogT = "ContractDefinitionIdList";
         } else if (name === "ContractDefinition" && paramName === `usedErrors`) {
@@ -233,7 +283,10 @@ function buildNodeDecls(name, constructor) {
         } else if (name === "FunctionCallOptions" && paramName === `options`) {
             datalogT = "NamedExpressionIdList";
         } else if (name === "ElementaryTypeNameExpression" && paramName === `typeName`) {
-            datalogT = "ElementaryTypeNameOrStrT";
+            // @note The TS type is string | ElementaryTypeName. We can't translate
+            // this correctly as you can't do a union type of number | symbol in Souffle.
+            // So for now just convert this to string.
+            datalogT = "symbol";
         } else if (name === "TupleExpression" && paramName === `components`) {
             datalogT = "ExpressionIdList";
         } else if (name === "ElementaryTypeName" && paramName === `stateMutability`) {
@@ -308,12 +361,12 @@ function buildNodeDecls(name, constructor) {
         let classDecls = decls.filter((d) => d.getKind() == "Class");
 
         if (module.getSourcePath().endsWith("/statement.ts")) {
-            assert(classDecls.length === 2);
+            assert(classDecls.length === 2, `statement.ts has 2 classes`);
 
             classDecls = [classDecls[0]];
         }
 
-        assert(classDecls.length === 1);
+        assert(classDecls.length === 1, `Not a single decl for ${module.getSourcePath()}`);
         const classDecl = classDecls[0];
 
         const name = classDecl.getName();
@@ -326,11 +379,23 @@ function buildNodeDecls(name, constructor) {
         const constructors = classDecl.getConstructors();
         const name = classDecl.getName();
 
-        assert(constructors.length === 1);
+        // Skip emitting declarations for "abstract" nodes.
+        // Id types for those are written in the staticPreamble
+        if (abstractClassNames.has(name)) {
+            continue;
+        }
+
+        assert(constructors.length === 1, `Not a single constructor for ${name}`);
 
         const constructor = constructors[0];
 
-        res.push(...buildNodeDecls(name, constructor));
+        const bases = classDecl.getHeritage().filter((n) => astClassNames.has(n.getName()));
+
+        if (bases.length !== 1) {
+            throw new Error(`Not a single base for ${name}`);
+        }
+
+        res.push(...buildNodeDecls(name, constructor, bases[0].getName()));
     }
 
     console.log(res.join("\n"));
