@@ -14,7 +14,8 @@
     "scripts": {
         "clean": "rm -rf dist/",
         "transpile": "tsc",
-        "build": "npm run clean && npm run transpile && chmod a+x dist/bin/sol_datalog.js",
+        "gen-preamble": "node scripts/gen_preamble.js > src/lib/preamble.ts",
+        "build": "npm run clean && npm run gen-preamble && npm run transpile && chmod a+x dist/bin/sol_datalog.js",
         "lint": "eslint src/ test/ --ext=ts",
         "lint:fix": "eslint src/ test/ --ext=ts --fix",
         "test": "c8 mocha",

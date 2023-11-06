@@ -398,5 +398,5 @@ function buildNodeDecls(name, constructor, baseName) {
         res.push(...buildNodeDecls(name, constructor, bases[0].getName()));
     }
 
-    console.log(res.join("\n"));
+    console.log("export const preamble = `", res.join("\n"), "`");
 })();
