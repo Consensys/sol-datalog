@@ -79,7 +79,6 @@ export function translateUnit(unit: sol.SourceUnit): string[] {
                 nd.vLinearizedBaseContracts,
                 nd.vUsedErrors
             );
-            return;
         } else if (nd instanceof sol.FunctionDefinition) {
             const overrideSpecId = nd.vOverrideSpecifier ? nd.vOverrideSpecifier.id : -1;
             const bodyId = nd.vBody ? nd.vBody.id : -1;
