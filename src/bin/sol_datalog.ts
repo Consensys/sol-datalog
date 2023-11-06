@@ -66,7 +66,12 @@ function error(message: string): never {
     const units = reader.read(result.data);
 
     const datalogProg = translate(units);
-    console.log(preamble + datalogProg);
+    console.log(
+        "\n //======= BEGIN PREAMBLE ====== \n" +
+            preamble +
+            "\n //======= END PREAMBLE ====== \n" +
+            datalogProg.join("\n")
+    );
 })().catch((e) => {
     error(e.message);
 });
