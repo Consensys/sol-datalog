@@ -23,14 +23,13 @@
         "prepare": "npm run build"
     },
     "dependencies": {
-        "@ts-ast-parser/core": "^0.6.2",
         "fs-extra": "^11.1.1",
-        "logplease": "1.2.15",
         "minimist": "^1.2.8",
         "semver": "^7.5.4",
         "solc-typed-ast": "^17.0.2"
     },
     "devDependencies": {
+        "@ts-ast-parser/core": "^0.6.2",
         "@types/fs-extra": "^11.0.2",
         "@types/minimist": "^1.2.3",
         "@types/mocha": "^10.0.2",

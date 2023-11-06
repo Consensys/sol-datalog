@@ -46,7 +46,6 @@ function translateVal(a: any): string {
 }
 
 function translateVals(...a: any[]): string[] {
-    console.error(`translateVals: `, a);
     const res = a.map(translateVal);
     console.error(res);
     return res;
