@@ -1,5 +1,5 @@
 {
-    "name": "sol-datalog",
+    "name": "@consensys/sol-datalog",
     "version": "0.0.0",
     "description": "Translator from Solidity AST to Datalog for later use with Souffle",
     "files": [
@@ -11,9 +11,10 @@
         "sol-datalog-cli": "dist/bin/cli.js"
     },
     "scripts": {
-        "clean": "rm -rf dist/",
+        "clean": "rm -rf dist/ && rm -rf src/translation/preamble.ts",
         "transpile": "tsc",
-        "build": "npm run clean && npm run transpile && chmod a+x dist/bin/cli.js",
+        "gen-preamble": "node scripts/gen_preamble.js > src/translation/preamble.ts",
+        "build": "npm run clean && npm run gen-preamble && npm run transpile && chmod a+x dist/bin/cli.js",
         "test": "c8 mocha",
         "lint": "eslint src/ test/ --ext=ts",
         "lint:fix": "eslint src/ test/ --ext=ts --fix",
@@ -39,7 +40,8 @@
         "c8": "^8.0.1",
         "prettier": "3.0.3",
         "ts-node": "^10.9.1",
-        "typescript": "^5.2.2"
+        "typescript": "^5.2.2",
+        "@ts-ast-parser/core": "^0.6.2"
     },
     "repository": {
         "type": "git",
