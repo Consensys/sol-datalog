@@ -674,20 +674,22 @@ async function main() {
 
     console.log(`Collected ${classes.length} AST classes from solc-typed-ast`);
 
-    console.log(`Generating src/lib/declarations_gen.ts`);
+    const genPath = "src/gen/declarations.ts";
+    console.log(`Generating ${genPath}`);
     res.push(...buildNodeDeclarations(classes));
-    const declsContents = `export const preamble = \`${res.join("\n")}\`;`;
-    fse.writeFileSync("src/lib/declarations_gen.ts", declsContents, { encoding: "utf-8" });
+    const declsContents = `export const preamble = \`${res.join("\n")}\`;\n`;
+    fse.writeFileSync(genPath, declsContents, { encoding: "utf-8" });
 
-    console.log(`Generating src/lib/translate_gen.ts`);
+    const translatePath = "src/gen/translate.ts";
+    console.log(`Generating ${translatePath}`);
     const factBuilderFun = buildFactBuilderFun(classes);
     const translateContents = `
 import * as sol from "solc-typed-ast";
-import { Literal, flatten, translateSymbolsMap, translateVals } from "./utils";
+import { Literal, flatten, translateSymbolsMap, translateVals } from "../lib/utils";
 
 ${factBuilderFun}
 `;
-    fse.writeFileSync("src/lib/translate_gen.ts", translateContents, { encoding: "utf-8" });
+    fse.writeFileSync(translatePath, translateContents, { encoding: "utf-8" });
 }
 
 main();

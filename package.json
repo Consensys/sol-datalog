@@ -11,9 +11,9 @@
         "sol-datalog-cli": "dist/bin/cli.js"
     },
     "scripts": {
-        "clean": "rm -rf dist/ && rm -rf src/translation/preamble.ts",
+        "clean": "rm -rf dist/ && rm -rf src/gen/declarations.ts src/gen/translate.ts",
         "transpile": "tsc",
-        "gen-preamble": "node scripts/gen_preamble.js > src/translation/preamble.ts",
+        "gen-preamble": "node scripts/gen_preamble.js",
         "build": "npm run clean && npm run gen-preamble && npm run transpile && chmod a+x dist/bin/cli.js",
         "test": "c8 mocha",
         "lint": "eslint src/ test/ --ext=ts",
