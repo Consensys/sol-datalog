@@ -1,6 +1,11 @@
 const { assert } = require("console");
 const path = require("path");
 
+/**
+ * @todo: Consider to use following (plus, change .ts to .d.ts)
+ *
+ * const solAstDir = path.dirname(require.resolve("solc-typed-ast"));
+ */
 const solAstDir = "../solc-typed-ast/src";
 
 const astFiles = [
