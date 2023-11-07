@@ -1,5 +1,6 @@
 const { assert } = require("console");
 const path = require("path");
+const fse = require("fs-extra");
 
 require("dotenv").config();
 
@@ -281,6 +282,10 @@ function buildNodeDecls(name, constructor, baseName) {
             optional = false;
         }
 
+        if (name === "UserDefinedTypeName" && paramName === "name") {
+            optional = true;
+        }
+
         if (optional) {
             assert(
                 type.endsWith(" | undefined"),
@@ -316,8 +321,6 @@ function buildNodeDecls(name, constructor, baseName) {
             datalogT = "ElementaryTypeNameMutability";
         } else if (name === "UserDefinedTypeName" && paramName === `name`) {
             datalogT = "symbol";
-        } else if (name === "UserDefinedTypeName" && paramName === `path`) {
-            continue; // In the translation we merge path and name into simpliy name for now
         } else if (name === "ForStatement" && paramName === `initializationExpression`) {
             datalogT = "ExpressionId";
         } else if (
@@ -369,6 +372,261 @@ function buildNodeDecls(name, constructor, baseName) {
     return res;
 }
 
+function buildNodeDeclarations(classDescs) {
+    const res = [];
+
+    for (const [name, classDecl, constructor] of classDescs) {
+        const bases = classDecl.getHeritage().filter((n) => astClassNames.has(n.getName()));
+
+        if (bases.length !== 1) {
+            throw new Error(`Not a single base for ${name}`);
+        }
+
+        res.push(...buildNodeDecls(name, constructor, bases[0].getName()));
+    }
+
+    return res;
+}
+
+function getDefaultValue(name, paramName, type) {
+    if (astClassNames.has(type)) {
+        return "-1";
+    }
+
+    if (type === "TimeUnit | EtherUnit") {
+        return '""';
+    }
+
+    if (type === "string" || type === "ModifierInvocationKind") {
+        return `""`;
+    }
+
+    if (type.endsWith("[]")) {
+        return `nil`;
+    }
+
+    if (
+        type === `ExpressionStatement | VariableDeclarationStatement` ||
+        type === `UserDefinedTypeName | IdentifierPath`
+    ) {
+        return `-1`;
+    }
+
+    throw new Error(`NYI getDefaultValue(${name}, ${paramName}, ${type})`);
+}
+
+const unchagedArgTypes = new Set([
+    "string[]",
+    "boolean",
+    "number",
+    "string",
+    "FunctionCallKind",
+    "ContractKind",
+    "DataLocation",
+    "StateVariableVisibility",
+    "Mutability",
+    "FunctionKind",
+    "FunctionVisibility",
+    "FunctionStateMutability",
+    "LiteralKind",
+    "ModifierInvocationKind",
+    "TimeUnit | EtherUnit",
+    `"nonpayable" | "payable"`,
+    `ModifierInvocationKind`
+]);
+
+const paramRenameMap = new Map([
+    [
+        "VariableDeclaration",
+        new Map([
+            ["typeName", "vType"],
+            ["overrideSpecifier", "vOverrideSpecifier"],
+            ["value", "vValue"]
+        ])
+    ],
+    [
+        "VariableDeclaration",
+        new Map([
+            ["typeName", "vType"],
+            ["overrideSpecifier", "vOverrideSpecifier"],
+            ["value", "vValue"]
+        ])
+    ]
+]);
+
+function translateFactArg(name, paramName, type) {
+    let ref = `nd.${paramName}`;
+
+    if (unchagedArgTypes.has(type)) {
+        return ref;
+    }
+
+    if (astClassNames.has(type)) {
+        return ref;
+    }
+
+    if (type.endsWith("[]")) {
+        const baseName = type.slice(0, -2);
+
+        if (astClassNames.has(baseName)) {
+            return ref;
+        }
+    }
+
+    const m = type.match(iterableRE);
+
+    if (m !== null && astClassNames.has(m[1])) {
+        return ref;
+    }
+
+    if (type === `Map<string, number>`) {
+        return `translateSymbolsMap(${ref})`;
+    }
+
+    if (type === `Map<string, Expression>`) {
+        return `translateExpressionsMap(${ref})`;
+    }
+
+    if (
+        type === `ExpressionStatement | VariableDeclarationStatement` ||
+        type === `UserDefinedTypeName | IdentifierPath` ||
+        type === `IdentifierPath | Identifier`
+    ) {
+        return ref;
+    }
+
+    if (type === `Iterable<UserDefinedTypeName | IdentifierPath>`) {
+        return ref;
+    }
+
+    if (
+        name === "ContractDefinition" &&
+        (paramName === "linearizedBaseContracts" || paramName === "usedErrors")
+    ) {
+        return ref;
+    }
+
+    if (name === `ElementaryTypeNameExpression` && paramName === `typeName`) {
+        return `${ref} instanceof ElementaryTypeName ? ${ref}.name : ${ref}`;
+    }
+
+    if (name === `TupleExpression` && paramName === `components`) {
+        return `nd.vOriginalComponents.map((c) => c === null ? -1 : c.id)`;
+    }
+
+    if (name === "VariableDeclarationStatement" && paramName === `assignments`) {
+        return `nd.assignments.map((c) => c === null ? -1 : c)`;
+    }
+
+    throw new Error(`Can't translate ${name}.${paramName} of type ${type}`);
+}
+
+function buildFactInvocation(name, constructor) {
+    const rawParams = constructor.getParameters();
+    const params = rawParams.map((p) => [p.getName(), p.isOptional(), p.getType().getText()]);
+
+    assert(
+        params.length >= 2 && params[0][0] === "id" && params[1][0] === "src",
+        `First 2 params are id and src for ${name}`
+    );
+
+    let res = ``;
+
+    let dynamicArgs = ["nd.id", "nd.src"];
+
+    for (let [paramName, optional, type] of params.slice(2)) {
+        if (skipFields.includes(paramName)) {
+            continue;
+        }
+
+        if (
+            name === "InlineAssembly" &&
+            (paramName === `externalReferences` ||
+                paramName === `operations` ||
+                paramName === `flags` ||
+                paramName === `yul` ||
+                paramName === `evmVersion`)
+        ) {
+            // @todo Add this InlineAssembly fields
+            continue;
+        }
+
+        if (name === "ImportDirective" && paramName === `symbolAliases`) {
+            // @todo add vSymbolAliases instead of symbolAliases
+            continue;
+        }
+
+        if (name === "ElementaryTypeName" && paramName === "stateMutability") {
+            optional = false;
+        }
+
+        if (name === "UserDefinedTypeName" && paramName === "name") {
+            optional = true;
+        }
+
+        if (paramRenameMap.has(name) && paramRenameMap.get(name).has(paramName)) {
+            paramName = paramRenameMap.get(name).get(paramName);
+        }
+
+        if (optional) {
+            assert(
+                type.endsWith(" | undefined"),
+                `Optional type should end with | undefined for ${type}`
+            );
+            type = type.slice(0, -12);
+        }
+
+        let dynamicArg = translateFactArg(name, paramName, type);
+
+        if (optional) {
+            dynamicArg = `nd.${paramName} === undefined ? ${getDefaultValue(
+                name,
+                paramName,
+                type
+            )} : ${dynamicArg}`;
+        }
+
+        dynamicArgs.push(dynamicArg);
+
+        if (optional) {
+            dynamicArgs.push(`nd.${paramName} === undefined`);
+        }
+    }
+
+    res += `args = translateVals(${dynamicArgs.join(", ")});`;
+
+    return res;
+}
+
+function buildFactBuilderFun(classDescs) {
+    let body = "";
+
+    for (let i = 0; i < classDescs.length; i++) {
+        const [name, , constructor] = classDescs[i];
+
+        const ifBody = buildFactInvocation(name, constructor);
+
+        if (body !== "") {
+            body += " else ";
+        }
+
+        body +=
+            i === classDescs.length - 1
+                ? `{\n    ${ifBody}\n}`
+                : `if (nd instanceof sol.${name}) {
+    ${ifBody}
+}`;
+    }
+
+    return `
+export function translateASTNodeInternal(nd: sol.ASTNode): string {
+    let args: string[];
+    ${body}
+    return \`\${nd.constructor.name}(\${args.join(", ")}).\`;
+}
+`;
+}
+
 async function main() {
     const parser = await import("@ts-ast-parser/core");
 
@@ -377,6 +635,8 @@ async function main() {
     const { project } = await parser.parseFromFiles(astFiles);
 
     modules = project?.getModules() ?? [];
+
+    console.log(`Collected ${modules.length} AST TS files from solc-typed-ast`);
 
     const classes = [];
 
@@ -396,12 +656,6 @@ async function main() {
         const name = classDecl.getName();
 
         astClassNames.add(name);
-        classes.push(classDecl);
-    }
-
-    for (const classDecl of classes) {
-        const constructors = classDecl.getConstructors();
-        const name = classDecl.getName();
 
         // Skip emitting declarations for "abstract" nodes.
         // Id types for those are written in the staticPreamble
@@ -409,22 +663,31 @@ async function main() {
             continue;
         }
 
+        const constructors = classDecl.getConstructors();
+
         assert(constructors.length === 1, `Not a single constructor for ${name}`);
 
         const constructor = constructors[0];
 
-        // console.log(classDecl, constructors);
-
-        const bases = classDecl.getHeritage().filter((n) => astClassNames.has(n.getName()));
-
-        if (bases.length !== 1) {
-            throw new Error(`Not a single base for ${name}`);
-        }
-
-        res.push(...buildNodeDecls(name, constructor, bases[0].getName()));
+        classes.push([name, classDecl, constructor]);
     }
 
-    console.log(`export const preamble = \`\n${res.join("\n")}\n\`;`);
+    console.log(`Collected ${classes.length} AST classes from solc-typed-ast`);
+
+    console.log(`Generating src/lib/declarations_gen.ts`);
+    res.push(...buildNodeDeclarations(classes));
+    const declsContents = `export const preamble = \`${res.join("\n")}\`;`;
+    fse.writeFileSync("src/lib/declarations_gen.ts", declsContents, { encoding: "utf-8" });
+
+    console.log(`Generating src/lib/translate_gen.ts`);
+    const factBuilderFun = buildFactBuilderFun(classes);
+    const translateContents = `
+import * as sol from "solc-typed-ast";
+import { Literal, flatten, translateSymbolsMap, translateVals } from "./utils";
+
+${factBuilderFun}
+`;
+    fse.writeFileSync("src/lib/translate_gen.ts", translateContents, { encoding: "utf-8" });
 }
 
 main();
