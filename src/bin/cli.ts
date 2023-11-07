@@ -2,6 +2,7 @@
 import { Command } from "commander";
 import fse from "fs-extra";
 import {
+    ASTReader,
     CACHE_DIR,
     CompilationOutput,
     CompileFailedError,
@@ -18,6 +19,7 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
+import { preamble, translate } from "../";
 
 const pkg = require("../../package.json");
 
@@ -272,9 +274,17 @@ async function main() {
         throw e;
     }
 
-    const { data, files } = result;
+    const reader = new ASTReader();
+    const units = reader.read(result.data);
 
-    console.log(data.version, files);
+    const facts = translate(units);
+
+    console.log(
+        "\n //======= BEGIN PREAMBLE ====== \n" +
+            preamble +
+            "\n //======= END PREAMBLE ====== \n" +
+            facts.join("\n")
+    );
 }
 
 main()
