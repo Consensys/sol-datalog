@@ -1,4 +1,4 @@
 node_modules/
 coverage/
 dist/
-src/translate/preamble.ts
+src/translation/preamble.ts
