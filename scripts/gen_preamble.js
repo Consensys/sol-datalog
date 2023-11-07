@@ -106,8 +106,8 @@ const staticPreamble = `
 ]
 
 .type ExportedSymbolsList = [
-    name: symbol,
     id: id,
+    name: symbol,
     tail : ExportedSymbolsList 
 ]
 
@@ -402,7 +402,7 @@ function getDefaultValue(name, paramName, type) {
     }
 
     if (type.endsWith("[]")) {
-        return `nil`;
+        return `new Literal("nil")`;
     }
 
     if (
@@ -451,11 +451,206 @@ const paramRenameMap = new Map([
             ["overrideSpecifier", "vOverrideSpecifier"],
             ["value", "vValue"]
         ])
-    ]
+    ],
+    [
+        "FunctionDefinition",
+        new Map([
+            ["parameters", "vParameters"],
+            ["returnParameters", "vReturnParameters"],
+            ["modifiers", "vModifiers"],
+            ["overrideSpecifier", "vOverrideSpecifier"],
+            ["body", "vBody"]
+        ])
+    ],
+    ["ExpressionStatement", new Map([["expression", "vExpression"]])],
+    [
+        "Assignment",
+        new Map([
+            ["leftHandSide", "vLeftHandSide"],
+            ["rightHandSide", "vRightHandSide"]
+        ])
+    ],
+    [
+        "BinaryOperation",
+        new Map([
+            ["leftExpression", "vLeftExpression"],
+            ["rightExpression", "vRightExpression"]
+        ])
+    ],
+    [
+        "FunctionCall",
+        new Map([
+            ["expression", "vExpression"],
+            ["args", "vArguments"]
+        ])
+    ],
+    [
+        "Conditional",
+        new Map([
+            ["condition", "vCondition"],
+            ["trueExpression", "vTrueExpression"],
+            ["falseExpression", "vFalseExpression"]
+        ])
+    ],
+    [
+        "FunctionCallOptions",
+        new Map([
+            ["expression", "vExpression"],
+            ["options", "vOptionsMap"]
+        ])
+    ],
+    ["UnaryOperation", new Map([["subExpression", "vSubExpression"]])],
+    [
+        "IndexAccess",
+        new Map([
+            ["baseExpression", "vBaseExpression"],
+            ["indexExpression", "vIndexExpression"]
+        ])
+    ],
+    ["MemberAccess", new Map([["expression", "vExpression"]])],
+    [
+        "IndexRangeAccess",
+        new Map([
+            ["baseExpression", "vBaseExpression"],
+            ["startExpression", "vStartExpression"],
+            ["endExpression", "vEndExpression"]
+        ])
+    ],
+    ["ErrorDefinition", new Map([["parameters", "vParameters"]])],
+    ["EnumDefinition", new Map([["members", "vMembers"]])],
+    ["EventDefinition", new Map([["parameters", "vParameters"]])],
+    ["NewExpression", new Map([["typeName", "vTypeName"]])],
+    ["StructDefinition", new Map([["members", "vMembers"]])],
+    [
+        "ModifierDefinition",
+        new Map([
+            ["parameters", "vParameters"],
+            ["overrideSpecifier", "vOverrideSpecifier"],
+            ["body", "vBody"]
+        ])
+    ],
+    [
+        "Mapping",
+        new Map([
+            ["keyType", "vKeyType"],
+            ["valueType", "vValueType"]
+        ])
+    ],
+    [
+        "FunctionTypeName",
+        new Map([
+            ["parameterTypes", "vParameterTypes"],
+            ["returnParameterTypes", "vReturnParameterTypes"]
+        ])
+    ],
+    [
+        "ArrayTypeName",
+        new Map([
+            ["baseType", "vBaseType"],
+            ["length", "vLength"]
+        ])
+    ],
+    [
+        "ForStatement",
+        new Map([
+            ["body", "vBody"],
+            ["initializationExpression", "vInitializationExpression"],
+            ["condition", "vCondition"],
+            ["loopExpression", "vLoopExpression"]
+        ])
+    ],
+    [
+        "TryStatement",
+        new Map([
+            ["externalCall", "vExternalCall"],
+            ["clauses", "vClauses"]
+        ])
+    ],
+    ["EmitStatement", new Map([["eventCall", "vEventCall"]])],
+    ["Block", new Map([["statements", "vStatements"]])],
+    ["UncheckedBlock", new Map([["statements", "vStatements"]])],
+    ["Return", new Map([["expression", "vExpression"]])],
+    [
+        "WhileStatement",
+        new Map([
+            ["condition", "vCondition"],
+            ["body", "vBody"]
+        ])
+    ],
+    [
+        "VariableDeclarationStatement",
+        new Map([
+            ["declarations", "vDeclarations"],
+            ["initialValue", "vInitialValue"]
+        ])
+    ],
+    [
+        "IfStatement",
+        new Map([
+            ["condition", "vCondition"],
+            ["trueBody", "vTrueBody"],
+            ["falseBody", "vFalseBody"]
+        ])
+    ],
+    [
+        "TryCatchClause",
+        new Map([
+            ["block", "vBlock"],
+            ["parameters", "vParameters"]
+        ])
+    ],
+    [
+        "DoWhileStatement",
+        new Map([
+            ["condition", "vCondition"],
+            ["body", "vBody"]
+        ])
+    ],
+    ["ParameterList", new Map([["parameters", "vParameters"]])],
+    [
+        "InheritanceSpecifier",
+        new Map([
+            ["baseType", "vBaseType"],
+            ["args", "vArguments"]
+        ])
+    ],
+    [
+        "UsingForDirective",
+        new Map([
+            ["libraryName", "vLibraryName"],
+            ["functionList", "vFunctionList"],
+            ["typeName", "vTypeName"]
+        ])
+    ],
+    [
+        "ModifierInvocation",
+        new Map([
+            ["modifierName", "vModifierName"],
+            ["args", "vArguments"]
+        ])
+    ],
+    ["OverrideSpecifier", new Map([["overrides", "vOverrides"]])]
 ]);
 
 function translateFactArg(name, paramName, type) {
     let ref = `nd.${paramName}`;
+
+    // Some hacks around a bugs in solc-typed-ast v. 17.0.2
+    if (paramName === "referencedDeclaration") {
+        return `${ref} === undefined ? -1 : ${ref}`;
+    }
+
+    if (paramName === "typeString") {
+        ref = `escapeDoubleQuotes(handleMissingString(${ref}))`;
+    }
+
+    // hex string literals may decode weirdly to strings resulting in un-terminated quotes.
+    // To guard against this don't emit value if this is kind is hexString
+    if (name === `Literal` && paramName === `value`) {
+        // In at least one case in `test/samples/solidity/writer_edge_cases.sourced.sol` value can be null
+        ref = `handleMissingString(${ref})`;
+        ref = `nd.kind === sol.LiteralKind.HexString ? "" : ${ref}`;
+    }
 
     if (unchagedArgTypes.has(type)) {
         return ref;
@@ -480,11 +675,11 @@ function translateFactArg(name, paramName, type) {
     }
 
     if (type === `Map<string, number>`) {
-        return `translateSymbolsMap(${ref})`;
+        return `new Literal(translateSymbolsMap(${ref}))`;
     }
 
     if (type === `Map<string, Expression>`) {
-        return `translateExpressionsMap(${ref})`;
+        return `new Literal(translateExpressionsMap(${ref}))`;
     }
 
     if (
@@ -507,7 +702,7 @@ function translateFactArg(name, paramName, type) {
     }
 
     if (name === `ElementaryTypeNameExpression` && paramName === `typeName`) {
-        return `${ref} instanceof ElementaryTypeName ? ${ref}.name : ${ref}`;
+        return `${ref} instanceof sol.ElementaryTypeName ? ${ref}.name : ${ref}`;
     }
 
     if (name === `TupleExpression` && paramName === `components`) {
@@ -610,13 +805,12 @@ function buildFactBuilderFun(classDescs) {
             body += " else ";
         }
 
-        body +=
-            i === classDescs.length - 1
-                ? `{\n    ${ifBody}\n}`
-                : `if (nd instanceof sol.${name}) {
+        body += `if (nd instanceof sol.${name}) {
     ${ifBody}
 }`;
     }
+
+    body += ` else {\n    throw new Error(\`Unknown AST node type \${nd.constructor.name}.\`);\n}`;
 
     return `
 export function translateASTNodeInternal(nd: sol.ASTNode): string {
@@ -685,7 +879,7 @@ async function main() {
     const factBuilderFun = buildFactBuilderFun(classes);
     const translateContents = `
 import * as sol from "solc-typed-ast";
-import { Literal, flatten, translateSymbolsMap, translateVals } from "../lib/utils";
+import { Literal, translateSymbolsMap, translateExpressionsMap, translateVals, escapeDoubleQuotes, handleMissingString } from "../lib/utils";
 
 ${factBuilderFun}
 `;

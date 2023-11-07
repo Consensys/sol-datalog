@@ -36,12 +36,37 @@ export function translateSymbolsMap(a: Map<string, number>): string {
         return `nil`;
     }
 
-    return [...a.entries()].reduceRight((acc, [name, id]) => `["${name}", ${id}, ${acc}]`, "nil");
+    return [...a.entries()].reduceRight((acc, [name, id]) => `[${id}, "${name}", ${acc}]`, "nil");
+}
+
+/**
+ * Helper to translate an expressions map into the underlying datalog record type
+ */
+export function translateExpressionsMap(a: Map<string, sol.Expression>): string {
+    if (a.size === 0) {
+        return `nil`;
+    }
+
+    return [...a.entries()].reduceRight(
+        (acc, [name, expr]) => `["${name}", ${expr.id}, ${acc}]`,
+        "nil"
+    );
 }
 
 // Helper class to pass a string to `translateVals` that shouldn't be quoted
 export class Literal {
     constructor(public v: string) {}
+}
+
+export function handleMissingString(s: string): string {
+    return s === null || s === undefined ? "" : s;
+}
+
+export function escapeDoubleQuotes(s: string): string {
+    if (s === undefined) {
+        console.trace();
+    }
+    return s.replaceAll('"', "'");
 }
 
 function translateVal(a: any): string {
@@ -69,9 +94,11 @@ function translateVal(a: any): string {
         return a.v;
     }
 
+    console.trace();
     throw new Error(`Don't know how to translate ${a}`);
 }
 
 export function translateVals(...a: any[]): string[] {
+    console.error(`translateVals`, a);
     return a.map(translateVal);
 }

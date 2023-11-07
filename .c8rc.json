@@ -6,7 +6,8 @@
         "**/test/**",
         "**/coverage/**",
         "**/.compiler_cache/**",
-        "src/bin/cli.ts"
+        "src/bin/cli.ts",
+        "scripts/gen_preamble.ts"
     ],
     "reporter": ["lcov", "text-summary"],
     "all": true,
