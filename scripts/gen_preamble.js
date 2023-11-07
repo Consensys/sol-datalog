@@ -1,12 +1,14 @@
 const { assert } = require("console");
 const path = require("path");
 
+require("dotenv").config();
+
 /**
  * @todo: Consider to use following (plus, change .ts to .d.ts)
  *
  * const solAstDir = path.dirname(require.resolve("solc-typed-ast"));
  */
-const solAstDir = "../solc-typed-ast/src";
+const solAstDir = process.env["SOLC_TYPED_AST_DIR"];
 
 const astFiles = [
     "ast/implementation/meta/source_unit.ts",
