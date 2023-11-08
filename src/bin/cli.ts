@@ -19,7 +19,7 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
-import { preamble, translate } from "../";
+import { preamble, translate } from "../lib";
 
 const pkg = require("../../package.json");
 

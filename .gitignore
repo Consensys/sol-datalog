@@ -1,5 +1,7 @@
 node_modules/
 coverage/
 dist/
-src/translation/preamble.ts
+tmp/
 .env
+src/gen/translate.ts
+src/gen/declarations.ts
