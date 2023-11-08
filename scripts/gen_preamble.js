@@ -352,6 +352,8 @@ function buildNodeDecls(name, constructor, baseName) {
             datalogT = "SourceUnitId";
         } else if (name === "OverrideSpecifier" && paramName === `overrides`) {
             datalogT = "IdList";
+        } else if (paramName === "referencedDeclaration") {
+            datalogT = "id";
         } else {
             datalogT = translateType(type);
         }
@@ -696,7 +698,9 @@ function translateFactArg(name, paramName, type) {
 
     if (
         name === "ContractDefinition" &&
-        (paramName === "linearizedBaseContracts" || paramName === "usedErrors")
+        (paramName === "linearizedBaseContracts" ||
+            paramName === "usedErrors" ||
+            paramName === "usedEvents")
     ) {
         return ref;
     }

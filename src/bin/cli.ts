@@ -20,6 +20,7 @@ import {
     isExact
 } from "solc-typed-ast";
 import { preamble, translate } from "../lib";
+import { outputRelations } from "../lib/outputRelations";
 
 const pkg = require("../../package.json");
 
@@ -283,7 +284,11 @@ async function main() {
         "\n //======= BEGIN PREAMBLE ====== \n" +
             preamble +
             "\n //======= END PREAMBLE ====== \n" +
-            facts.join("\n")
+            "\n //======= BEGIN FACTS ====== \n" +
+            facts.join("\n") +
+            "\n //======= END FACTS ====== \n" +
+            "\n //======= BEGIN OUTPUT RELATIONS ====== \n" +
+            outputRelations
     );
 }
 
