@@ -53,6 +53,22 @@ export function translateExpressionsMap(a: Map<string, sol.Expression>): string 
     );
 }
 
+export function translateUsingForFunctionList(
+    lst: Array<sol.IdentifierPath | sol.UsingCustomizedOperator>
+): string {
+    if (lst.length === 0) {
+        return `nil`;
+    }
+
+    return lst.reduceRight(
+        (acc, el) =>
+            el instanceof sol.IdentifierPath
+                ? `["${el.id}", "", ${acc}]`
+                : `["${el.definition.id}", "${el.operator}", ${acc}]`,
+        "nil"
+    );
+}
+
 // Helper class to pass a string to `translateVals` that shouldn't be quoted
 export class Literal {
     constructor(public v: string) {}

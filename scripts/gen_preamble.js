@@ -172,6 +172,13 @@ const staticPreamble = `
     tail : IdList
 ]
 
+.type UsingForFunctionList = [
+    id: IdentifierPathId,
+    operator: symbol, // "" if missing
+    tail: UsingForFunctionList
+]
+
+
 .decl parent(parentId: id, childId: id)
 `;
 
@@ -298,10 +305,11 @@ function buildNodeDecls(name, constructor, baseName) {
             datalogT = `ExportedSymbolsList`;
         } else if (name === "ContractDefinition" && paramName === `linearizedBaseContracts`) {
             datalogT = "ContractDefinitionIdList";
-        } else if (name === "ContractDefinition" && paramName === `usedErrors`) {
+        } else if (
+            name === "ContractDefinition" &&
+            (paramName === `usedErrors` || paramName === `usedEvents` || paramName === `usedErrors`)
+        ) {
             datalogT = "ErrorDefinitionIdList";
-        } else if (name === "ContractDefinition" && paramName === `usedEvents`) {
-            datalogT = "EventDefinitionIdList";
         } else if (name === "ContractDefinition" && paramName === `scope`) {
             datalogT = "SourceUnitId";
         } else if (name === "VariableDeclaration" && paramName === `scope`) {
@@ -352,6 +360,13 @@ function buildNodeDecls(name, constructor, baseName) {
             datalogT = "SourceUnitId";
         } else if (name === "OverrideSpecifier" && paramName === `overrides`) {
             datalogT = "IdList";
+        } else if (
+            (name === "BinaryOperation" || name === "UnaryOperation") &&
+            paramName === `userFunction`
+        ) {
+            datalogT = "id";
+        } else if (name === "UinsgForDirective" && paramName === `functionList`) {
+            datalogT = "UsingForFunctionList";
         } else {
             datalogT = translateType(type);
         }
@@ -393,7 +408,7 @@ function getDefaultValue(name, paramName, type) {
         return "-1";
     }
 
-    if (type === "TimeUnit | EtherUnit") {
+    if (type === "TimeUnit | EtherUnit" || type === "EtherUnit | TimeUnit") {
         return '""';
     }
 
@@ -407,9 +422,14 @@ function getDefaultValue(name, paramName, type) {
 
     if (
         type === `ExpressionStatement | VariableDeclarationStatement` ||
-        type === `UserDefinedTypeName | IdentifierPath`
+        type === `UserDefinedTypeName | IdentifierPath` ||
+        type === `IdentifierPath | UserDefinedTypeName`
     ) {
         return `-1`;
+    }
+
+    if ((name === "BinaryOperation" || name === "UnaryOperation") && paramName === "userFunction") {
+        return -1;
     }
 
     throw new Error(`NYI getDefaultValue(${name}, ${paramName}, ${type})`);
@@ -431,7 +451,9 @@ const unchagedArgTypes = new Set([
     "LiteralKind",
     "ModifierInvocationKind",
     "TimeUnit | EtherUnit",
+    "EtherUnit | TimeUnit",
     `"nonpayable" | "payable"`,
+    `"payable" | "nonpayable"`,
     `ModifierInvocationKind`
 ]);
 
@@ -685,18 +707,28 @@ function translateFactArg(name, paramName, type) {
     if (
         type === `ExpressionStatement | VariableDeclarationStatement` ||
         type === `UserDefinedTypeName | IdentifierPath` ||
+        type === `IdentifierPath | UserDefinedTypeName` ||
         type === `IdentifierPath | Identifier`
     ) {
         return ref;
     }
 
-    if (type === `Iterable<UserDefinedTypeName | IdentifierPath>`) {
+    if (
+        type === `Iterable<UserDefinedTypeName | IdentifierPath>` ||
+        type === "Iterable<IdentifierPath | UserDefinedTypeName>"
+    ) {
         return ref;
+    }
+
+    if (type === `(IdentifierPath | UsingCustomizedOperator)[]`) {
+        return `translateUsingForFunctionList(${ref})`;
     }
 
     if (
         name === "ContractDefinition" &&
-        (paramName === "linearizedBaseContracts" || paramName === "usedErrors")
+        (paramName === "linearizedBaseContracts" ||
+            paramName === "usedErrors" ||
+            paramName === "usedEvents")
     ) {
         return ref;
     }
@@ -879,7 +911,7 @@ async function main() {
     const factBuilderFun = buildFactBuilderFun(classes);
     const translateContents = `
 import * as sol from "solc-typed-ast";
-import { Literal, translateSymbolsMap, translateExpressionsMap, translateVals, escapeDoubleQuotes, handleMissingString } from "../lib/utils";
+import { Literal, translateSymbolsMap, translateExpressionsMap, translateUsingForFunctionList, translateVals, escapeDoubleQuotes, handleMissingString } from "../lib/utils";
 
 ${factBuilderFun}
 `;
