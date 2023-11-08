@@ -13,8 +13,8 @@
     "scripts": {
         "clean": "rm -rf dist/ && rm -rf src/gen/declarations.ts src/gen/translate.ts",
         "transpile": "tsc",
-        "gen-preamble": "node scripts/gen_preamble.js && eslint --fix src/gen/translate.ts src/gen/declarations.ts",
-        "build": "npm run clean && npm run gen-preamble && npm run transpile && chmod a+x dist/bin/cli.js",
+        "gen-translation-modules": "node scripts/gen_translation_modules.js && eslint --fix src/gen/translate.ts src/gen/declarations.ts",
+        "build": "npm run clean && npm run gen-translation-modules && npm run transpile && chmod a+x dist/bin/cli.js",
         "test": "c8 mocha",
         "lint": "eslint src/ test/ --ext=ts",
         "lint:fix": "eslint src/ test/ --ext=ts --fix",
@@ -42,8 +42,7 @@
         "mocha": "^10.2.0",
         "prettier": "3.0.3",
         "ts-node": "^10.9.1",
-        "typescript": "^5.2.2",
-        "@ts-ast-parser/core": "^0.6.2"
+        "typescript": "^5.2.2"
     },
     "repository": {
         "type": "git",
