@@ -20,7 +20,6 @@ contract(name, id) :- ContractDefinition(id, _, name, _, _, _, _, _, _).
 
 // Compute whether a state var with a given id is modified in a LHS expression
 .decl stateVarModifiedInLHS(varId: id, exprId: id)
-.output stateVarModifiedInLHS 
 
 // Simple reference to the variable
 stateVarModifiedInLHS(varId, exprId) :-
