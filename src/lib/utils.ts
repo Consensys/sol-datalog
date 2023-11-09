@@ -82,6 +82,7 @@ export function escapeDoubleQuotes(s: string): string {
     if (s === undefined) {
         console.trace();
     }
+
     return s.replaceAll('"', "'");
 }
 
@@ -111,10 +112,11 @@ function translateVal(a: any): string {
     }
 
     console.trace();
+
     throw new Error(`Don't know how to translate ${a}`);
 }
 
 export function translateVals(...a: any[]): string[] {
-    console.error(`translateVals`, a);
+    // console.error(`translateVals`, a);
     return a.map(translateVal);
 }

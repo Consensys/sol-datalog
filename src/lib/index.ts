@@ -1,2 +1,3 @@
-export * from "./translate";
 export { preamble } from "../gen";
+export * from "./souffle";
+export * from "./translate";

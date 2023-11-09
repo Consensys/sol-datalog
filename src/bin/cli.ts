@@ -19,7 +19,7 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
-import { preamble, translate } from "../lib";
+import { analyze, datalogFromUnits } from "../lib";
 
 const pkg = require("../../package.json");
 
@@ -80,6 +80,10 @@ async function main() {
         .option(
             "--download-compilers <compilerKind...>",
             `Download specified kind of supported compilers to compiler cache. Supports multiple entries.`
+        )
+        .option(
+            "--analyze <analysis>",
+            'Translate Solidity to Datalog, append "analysis" statements, run Souffle and print results'
         );
 
     program.parse(process.argv);
@@ -277,14 +281,16 @@ async function main() {
     const reader = new ASTReader();
     const units = reader.read(result.data);
 
-    const facts = translate(units);
+    if (options.analyze) {
+        const analysis = options.analyze;
+        const output = analyze(units, analysis);
 
-    console.log(
-        "\n //======= BEGIN PREAMBLE ====== \n" +
-            preamble +
-            "\n //======= END PREAMBLE ====== \n" +
-            facts.join("\n")
-    );
+        console.log(output);
+
+        return;
+    }
+
+    console.log(datalogFromUnits(units));
 }
 
 main()
