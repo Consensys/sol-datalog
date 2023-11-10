@@ -287,8 +287,7 @@ async function main() {
 
         const outRels = readProducedOutput(output);
         const csvRels = readProducedCsvFiles(analysis);
-
-        const summary = new Map<string, string[][]>([...outRels, ...csvRels]);
+        const summary = new Map([...outRels, ...csvRels]);
 
         for (const [rel, entries] of summary) {
             console.log(rel, entries);
