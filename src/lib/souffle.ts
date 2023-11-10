@@ -83,13 +83,24 @@ export function readProducedCsvFiles(datalog: string): Map<string, string[][]> {
 }
 
 export function readProducedOutput(output: string): Map<string, string[][]> {
-    const rxOutRel = /(\w+)\n+={15,15}\n([^==]+)={15,15}/g;
+    const relMarker = "---------------";
+    const bodyMarker = "===============";
     const relMap = new Map<string, string[][]>();
 
-    let matches: RegExpExecArray | null;
+    let idxRel = output.indexOf(relMarker);
 
-    while ((matches = rxOutRel.exec(output))) {
-        relMap.set(matches[1], parseCsv(matches[2]));
+    while (idxRel > -1) {
+        const idxBodyStart = output.indexOf(bodyMarker, idxRel + relMarker.length);
+        const idxBodyFinish = output.indexOf(bodyMarker, idxBodyStart + bodyMarker.length);
+
+        const rel = output.slice(idxRel + relMarker.length, idxBodyStart).trim();
+        const body = output.slice(idxBodyStart + bodyMarker.length, idxBodyFinish).trim();
+
+        const entries = parseCsv(body);
+
+        relMap.set(rel, entries);
+
+        idxRel = output.indexOf(relMarker, idxBodyFinish + bodyMarker.length);
     }
 
     return relMap;

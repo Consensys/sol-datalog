@@ -285,6 +285,8 @@ async function main() {
         const analysis = options.analyze;
         const output = analyze(units, analysis);
 
+        // console.log(output);
+
         const outRels = readProducedOutput(output);
         const csvRels = readProducedCsvFiles(analysis);
         const summary = new Map([...outRels, ...csvRels]);
