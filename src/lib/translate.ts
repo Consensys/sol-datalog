@@ -1,9 +1,18 @@
 import * as sol from "solc-typed-ast";
 import { flatten } from "./utils";
-import { translateASTNodeInternal } from "../gen";
+import { preamble, translateASTNodeInternal } from "../gen";
 
-export function translate(units: sol.SourceUnit[]): string[] {
+export function facts(units: sol.SourceUnit[]): string[] {
     return flatten(units.map(translateUnit));
+}
+
+export function datalogFromUnits(units: sol.SourceUnit[]): string {
+    return [
+        "// ======= PREAMBLE =======",
+        preamble,
+        "// ======= FACTS =======",
+        ...facts(units)
+    ].join("\n");
 }
 
 /**
