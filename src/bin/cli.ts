@@ -19,7 +19,7 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
-import { analyze, datalogFromUnits } from "../lib";
+import { analyze, datalogFromUnits, readProducedCsvFiles, readProducedOutput } from "../lib";
 
 const pkg = require("../../package.json");
 
@@ -285,7 +285,15 @@ async function main() {
         const analysis = options.analyze;
         const output = analyze(units, analysis);
 
-        console.log(output);
+        // console.log(output);
+
+        const outRels = readProducedOutput(output);
+        const csvRels = readProducedCsvFiles(analysis);
+        const summary = new Map([...outRels, ...csvRels]);
+
+        for (const [rel, entries] of summary) {
+            console.log(rel, entries);
+        }
 
         return;
     }

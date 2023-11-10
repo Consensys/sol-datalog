@@ -5,6 +5,7 @@ import os from "os";
 import path from "path";
 import * as sol from "solc-typed-ast";
 import { datalogFromUnits } from "./translate";
+import { parse } from "csv-parse/sync";
 
 export function souffle(datalog: string): string {
     const tmpDir = os.tmpdir();
@@ -36,4 +37,71 @@ export function analyze(units: sol.SourceUnit[], analysis: string): string {
     );
 
     return souffle(datalog);
+}
+
+function extractOutputRelations(datalog: string): string[] {
+    const rxOutRel = /\.output\s+(\w+)/g;
+    const result: string[] = [];
+
+    let matches: RegExpExecArray | null;
+
+    while ((matches = rxOutRel.exec(datalog))) {
+        result.push(matches[1]);
+    }
+
+    return result;
+}
+
+export function parseCsv(content: string, delimiter = "\t"): string[][] {
+    const config = {
+        skipEmptyLines: true,
+        cast: true,
+        delimiter
+    };
+
+    return parse(content, config);
+}
+
+export function readProducedCsvFiles(datalog: string): Map<string, string[][]> {
+    const outRels = extractOutputRelations(datalog);
+    const relMap = new Map<string, string[][]>();
+
+    for (const rel of outRels) {
+        const fileName = rel + ".csv";
+
+        if (fse.existsSync(fileName)) {
+            const content = fse.readFileSync(fileName, { encoding: "utf-8" });
+            const entries = parseCsv(content);
+
+            relMap.set(rel, entries);
+
+            fse.removeSync(fileName);
+        }
+    }
+
+    return relMap;
+}
+
+export function readProducedOutput(output: string): Map<string, string[][]> {
+    const relMarker = "---------------";
+    const bodyMarker = "===============";
+    const relMap = new Map<string, string[][]>();
+
+    let idxRel = output.indexOf(relMarker);
+
+    while (idxRel > -1) {
+        const idxBodyStart = output.indexOf(bodyMarker, idxRel + relMarker.length);
+        const idxBodyFinish = output.indexOf(bodyMarker, idxBodyStart + bodyMarker.length);
+
+        const rel = output.slice(idxRel + relMarker.length, idxBodyStart).trim();
+        const body = output.slice(idxBodyStart + bodyMarker.length, idxBodyFinish).trim();
+
+        const entries = parseCsv(body);
+
+        relMap.set(rel, entries);
+
+        idxRel = output.indexOf(relMarker, idxBodyFinish + bodyMarker.length);
+    }
+
+    return relMap;
 }
