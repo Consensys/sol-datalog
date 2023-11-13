@@ -367,6 +367,8 @@ function buildNodeDecls(name, constructor, baseName) {
             datalogT = "id";
         } else if (name === "UinsgForDirective" && paramName === `functionList`) {
             datalogT = "UsingForFunctionList";
+        } else if (paramName === "referencedDeclaration") {
+            datalogT = "id";
         } else {
             datalogT = translateType(type);
         }

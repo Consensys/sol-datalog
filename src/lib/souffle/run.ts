@@ -20,21 +20,38 @@ export function souffle(datalog: string): string {
 
     const result = spawnSync("souffle", [fileName], { encoding: "utf-8" });
 
-    fse.removeSync(fileName);
-
     if (result.status !== 0) {
         throw new Error(
-            `Souffle terminated with non-zero exit code (${result.status}): ${result.stderr}`
+            `Souffle terminated with non-zero exit code (${result.status}): ${result.stderr}. Input in ${fileName}`
         );
+    } else {
+        fse.removeSync(fileName);
     }
 
     return result.stdout;
 }
 
-export function analyze(units: sol.SourceUnit[], analysis: string): string {
-    const datalog = [datalogFromUnits(units), "// ======= ANALYSIS RELS =======", analysis].join(
-        "\n"
+export function getDefinedAnalyses(): string {
+    const analysesBaseDir = path.join(__dirname, "../analyses");
+    const fileNames = ["state_var_modified.dl"].map((n) => path.join(analysesBaseDir, n));
+
+    const contents = fileNames.map(
+        (fileName) => `////// ${fileName} \n` + fse.readFileSync(fileName, { encoding: "utf-8" })
     );
+
+    return contents.join("\n");
+}
+
+export function analyze(units: sol.SourceUnit[], additionalDatalog: string): string {
+    const unitsDL = datalogFromUnits(units);
+    const definedAnalyses = getDefinedAnalyses();
+    const datalog = [
+        unitsDL,
+        "// ======= ANALYSIS RELS =======",
+        definedAnalyses,
+        "// ======= ADDITIONAL DATALOG =======",
+        additionalDatalog
+    ].join("\n");
 
     return souffle(datalog);
 }

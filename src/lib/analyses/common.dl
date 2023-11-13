@@ -1,0 +1,21 @@
+// Compute whether a node with ancestorId is the ancestor of a node with descendantId in the AST.
+.decl ancestor(ancestorId: id, descendantId: id)
+
+ancestor(x, y) :- parent(x, y).
+ancestor(x, y) :- parent(x, z), ancestor(z, y).
+
+// Compute whether there is a state var VariableDeclaration with a given name and id
+.decl stateVar(name: symbol, id: id)
+stateVar(name, id) :- VariableDeclaration(id, _, _, _, name, _, 1, _, _, _, _, _, _, _, _, _, _).
+
+// Compute whether there is a function definition with a given name and id
+.decl function(name: symbol, id: id)
+function(name, id) :- FunctionDefinition(id, _, _, _, name, _, _, _, _, _, _, _, _, _, _, _).
+
+// Compute whether there is a contract definition with a given name and id
+.decl contract(name: symbol, id: id)
+contract(name, id) :- ContractDefinition(id, _, name, _, _, _, _, _, _, _).
+
+.decl inherits(childContractId: id, baseContractId: id)
+inherits(childContractId, baseContractId) :- ContractDefinition(childContractId, _, _, _, _, _, _, _, _, _), childContractId == baseContractId.
+inherits(childContractId, baseContractId) :- ContractDefinition(childContractId, _, _, _, _, _, _, _, _, _).

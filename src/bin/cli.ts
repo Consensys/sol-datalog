@@ -281,7 +281,7 @@ async function main() {
     const reader = new ASTReader();
     const units = reader.read(result.data);
 
-    if (options.analyze) {
+    if (options.analyze !== undefined) {
         const analysis = options.analyze;
         const output = analyze(units, analysis);
 
