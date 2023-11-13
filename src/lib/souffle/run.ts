@@ -4,7 +4,7 @@ import fse from "fs-extra";
 import os from "os";
 import path from "path";
 import * as sol from "solc-typed-ast";
-import { datalogFromUnits } from "./translate";
+import { datalogFromUnits } from "../translate";
 import { parse } from "csv-parse/sync";
 
 export function souffle(datalog: string): string {
