@@ -100,12 +100,6 @@ const staticPreamble = `
 
 .type SubdenominationT = TimeUnit | EtherUnit
 
-.type NamedExpressionIdList = [
-    name: symbol,
-    id: ExpressionId,
-    tail : NamedExpressionIdList
-]
-
 .decl parent(parentId: id, childId: id)
 .decl ContractDefinition_linearizedBaseContracts(parentId: ContractDefinitionId, childId: ContractDefinitionId, idx: number)
 .decl ContractDefinition_usedErrors(parentId: ContractDefinitionId, childId: ErrorDefinitionId, idx: number)
@@ -299,8 +293,6 @@ function buildNodeDecls(name, constructor, baseName) {
             datalogT = "id";
         } else if (name === "Literal" && paramName === `subdenomination`) {
             datalogT = "SubdenominationT";
-        } else if (name === "FunctionCallOptions" && paramName === `options`) {
-            datalogT = "NamedExpressionIdList";
         } else if (name === "ElementaryTypeNameExpression" && paramName === `typeName`) {
             // @note The TS type is string | ElementaryTypeName. We can't translate
             // this correctly as you can't do a union type of number | symbol in Souffle.
