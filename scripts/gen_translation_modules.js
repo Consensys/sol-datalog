@@ -100,89 +100,71 @@ const staticPreamble = `
 
 .type SubdenominationT = TimeUnit | EtherUnit
 
-.type StringList = [
-    head : symbol,
-    tail : StringList
-]
-
-.type ExportedSymbolsList = [
-    id: id,
-    name: symbol,
-    tail : ExportedSymbolsList 
-]
-
-.type NamedExpressionIdList = [
-    name: symbol,
-    id: ExpressionId,
-    tail : NamedExpressionIdList
-]
-
-.type ContractDefinitionIdList = [
-    head : ContractDefinitionId,
-    tail : ContractDefinitionIdList
-]
-
-.type VariableDeclarationIdList = [
-    head : VariableDeclarationId,
-    tail : VariableDeclarationIdList
-]
-
-.type EventDefinitionIdList = [
-    head : EventDefinitionId,
-    tail : EventDefinitionIdList
-]
-
-.type ErrorDefinitionIdList = [
-    head : ErrorDefinitionId,
-    tail : ErrorDefinitionIdList
-]
-
-.type IdentifierPathIdList = [
-    head : IdentifierPathId,
-    tail : IdentifierPathIdList
-]
-
-.type ExpressionIdList = [
-    head : ExpressionId,
-    tail : ExpressionIdList
-]
-
-.type StatementIdList = [
-    head : StatementId,
-    tail : StatementIdList
-]
-
-.type ModifierInvocationIdList = [
-    head : ModifierInvocationId,
-    tail : ModifierInvocationIdList
-]
-
-.type EnumValueIdList = [
-    head : EnumValueId,
-    tail : EnumValueIdList
-]
-
-.type TryCatchClauseIdList = [
-    head : TryCatchClauseId,
-    tail : TryCatchClauseIdList
-]
-
-.type IdList = [
-    head : id, 
-    tail : IdList
-]
-
-.type UsingForFunctionList = [
-    id: IdentifierPathId,
-    operator: symbol, // "" if missing
-    tail: UsingForFunctionList
-]
-
-
 .decl parent(parentId: id, childId: id)
+.decl ContractDefinition_linearizedBaseContracts(parentId: ContractDefinitionId, childId: ContractDefinitionId, idx: number)
+.decl ContractDefinition_usedErrors(parentId: ContractDefinitionId, childId: ErrorDefinitionId, idx: number)
+.decl ContractDefinition_usedEvents(parentId: ContractDefinitionId, childId: EventDefinitionId, idx: number)
+.decl TupleExpression_components(parentId: TupleExpressionId, childId: ExpressionId, idx: number)
+.decl FunctionDefinition_vModifiers(parentId: FunctionDefinitionId, childId: ModifierInvocationId, idx: number)
+.decl FunctionCall_vArguments(parentId: FunctionCallId, childId: ExpressionId, idx: number)
+.decl TryStatement_vClauses(parentId: TryStatementId, childId: TryCatchClauseId, idx: number)
+.decl VariableDeclarationStatement_vDeclarations(parentId: VariableDeclarationStatementId, childId: VariableDeclarationId, idx: number)
+.decl InheritanceSpecifier_vArguments(parentId: InheritanceSpecifierId, childId: ExpressionId, idx: number)
+.decl ModifierInvocation_vArguments(parentId: ModifierInvocationId, childId: ExpressionId, idx: number)
+.decl ParameterList_vParameters(parentId: ParameterListId, childId: VariableDeclarationId, idx: number)
+.decl Block_vStatements(parentId: BlockId, childId: StatementId, idx: number)
+.decl UncheckedBlock_vStatements(parentId: UncheckedBlockId, childId: StatementId, idx: number)
+.decl UsingForDirective_vFunctionList(parentId: UsingForDirectiveId, childId: IdentifierPathId, operator: symbol, idx: number)
+.decl StructDefinition_vMembers(parentId: StructDefinitionId, childId: VariableDeclarationId, idx: number)
+.decl EnumDefinition_vMembers(parentId: EnumDefinitionId, childId: EnumValueId, idx: number)
+.decl VariableDeclarationStatement_assignments(parentId: VariableDeclarationStatementId, childId: VariableDeclarationId, idx: number)
+.decl OverrideSpecifier_vOverrides(parentId: OverrideSpecifierId, childId: id, idx: number)
+
+.decl FunctionCall_fieldNames(parentId: FunctionCallId, name: symbol, idx: number)
+.decl PragmaDirective_literals(parentId: FunctionCallId, literal: symbol, idx: number)
+.decl SourceUnit_exportedSymbols(parentId: SourceUnitId, name: symbol, id: id)
+.decl FunctionCallOptions_vOptionsMap(parentId: FunctionCallOptionsId, name: symbol, id: id)
 `;
 
 const skipFields = ["raw", "documentation", "nameLocation", "children"];
+const skipClassFieldsM = new Map([
+    ["ContractDefinition", ["linearizedBaseContracts", "usedErrors", "usedEvents"]],
+    ["TupleExpression", ["components"]],
+    // @todo add inline assembly
+    ["InlineAssembly", [`externalReferences`, `operations`, `flags`, `yul`, `evmVersion`]],
+    // @todo add symbolAliases
+    ["ImportDirective", ["symbolAliases"]],
+    ["FunctionDefinition", ["modifiers"]],
+    ["FunctionCall", ["args", "fieldNames"]],
+    ["TryStatement", ["clauses"]],
+    ["VariableDeclarationStatement", ["declarations", "assignments"]],
+    ["InheritanceSpecifier", ["args"]],
+    ["ModifierInvocation", ["args"]],
+    ["ParameterList", ["parameters"]],
+    ["OverrideSpecifier", ["overrides"]],
+    ["Block", ["statements"]],
+    ["UncheckedBlock", ["statements"]],
+    ["PragmaDirective", ["literals"]],
+    ["StructDefinition", ["members"]],
+    ["EnumDefinition", ["members"]],
+    ["UsingForDirective", ["functionList"]],
+    ["SourceUnit", ["exportedSymbols"]],
+    ["FunctionCallOptions", ["options"]]
+]);
+
+function shouldSkipField(className, fieldName) {
+    if (skipFields.includes(fieldName)) {
+        return true;
+    }
+
+    const t = skipClassFieldsM.get(className);
+
+    if (t && t.includes(fieldName)) {
+        return true;
+    }
+
+    return false;
+}
 
 // @todo cleanup
 const astClassNames = new Set(["ASTNodeWithChildren", "ASTNode", "StatementWithChildren"]);
@@ -198,7 +180,6 @@ const abstractClassNames = new Set([
 const simpleTypeMap = new Map([
     ["number", "number"],
     ["string", "symbol"],
-    ["string[]", "StringList"],
     ["boolean", "bool"],
     ["FunctionCallKind", "FunctionCallKind"],
     ["ContractKind", "ContractKind"],
@@ -218,7 +199,7 @@ const abstractASTNodeToIdType = new Map([
     ["Expression", "ExpressionId"],
     ["Statement", "StatementId"],
     ["StatementWithChildren", "StatementId"],
-    ["PrimaryExpression", "ExpressionId"], // @todo Do we want a separate PrimaryExpressionId?
+    ["PrimaryExpression", "ExpressionId"],
     ["TypeName", "TypeNameId"]
 ]);
 
@@ -240,26 +221,31 @@ function translateType(tsT) {
         }
     }
 
-    if (tsT.endsWith("[]")) {
-        const baseName = tsT.slice(0, -2);
-
-        if (astClassNames.has(baseName)) {
-            return `${baseName}IdList`;
-        }
-    }
-
-    const m = tsT.match(iterableRE);
-
-    if (m !== null && astClassNames.has(m[1])) {
-        return `${m[1]}IdList`;
-    }
-
     throw new Error(`Can't translate type ${tsT}`);
 }
 
+const arrayFieldsToBaseTypesM = new Map([
+    [
+        "ContractDefinition",
+        new Map([
+            ["linearizedBaseContracts", "ContractDefinition"],
+            ["usedErrors", "ErrorDefinition"],
+            ["usedEvents", "EventDefintion"]
+        ])
+    ],
+    ["TupleExpression", new Map([["components", "Expression"]])],
+    ["ParameterList", new Map([["parameters", "VariableDeclaration"]])],
+    ["OverrideSpecifier", new Map([["overrides", "id"]])],
+    ["Block", new Map([["statements", "Statement"]])],
+    ["VariableDeclarationStatement", new Map([["assignments", "VariableDeclaration"]])],
+    ["UsingForDirective", new Map([["functionList", "id"]])],
+    ["FunctionCall", new Map([["fieldNames", "string"]])],
+    ["PragmaDirective", new Map([["literals", "string"]])]
+]);
+
 /**
  * Given the name of some ASTNode class, and a reference to the parsed constructor
- * generate the neccessary DataLog declartaions and types for this class.
+ * generate the necessary DataLog declarations and types for this class.
  */
 function buildNodeDecls(name, constructor, baseName) {
     const rawParams = constructor.getParameters();
@@ -279,7 +265,7 @@ function buildNodeDecls(name, constructor, baseName) {
     let dynamicArgs = [];
 
     for (let [paramName, optional, type] of params.slice(2)) {
-        if (skipFields.includes(paramName)) {
+        if (shouldSkipField(name, paramName)) {
             continue;
         }
 
@@ -301,47 +287,25 @@ function buildNodeDecls(name, constructor, baseName) {
             type = type.slice(0, -12);
         }
 
-        if (name === "SourceUnit" && paramName === `exportedSymbols`) {
-            datalogT = `ExportedSymbolsList`;
-        } else if (name === "ContractDefinition" && paramName === `linearizedBaseContracts`) {
-            datalogT = "ContractDefinitionIdList";
-        } else if (
-            name === "ContractDefinition" &&
-            (paramName === `usedErrors` || paramName === `usedEvents` || paramName === `usedErrors`)
-        ) {
-            datalogT = "ErrorDefinitionIdList";
-        } else if (name === "ContractDefinition" && paramName === `scope`) {
+        if (name === "ContractDefinition" && paramName === `scope`) {
             datalogT = "SourceUnitId";
         } else if (name === "VariableDeclaration" && paramName === `scope`) {
             datalogT = "id";
         } else if (name === "Literal" && paramName === `subdenomination`) {
             datalogT = "SubdenominationT";
-        } else if (name === "FunctionCallOptions" && paramName === `options`) {
-            datalogT = "NamedExpressionIdList";
         } else if (name === "ElementaryTypeNameExpression" && paramName === `typeName`) {
             // @note The TS type is string | ElementaryTypeName. We can't translate
             // this correctly as you can't do a union type of number | symbol in Souffle.
             // So for now just convert this to string.
             datalogT = "symbol";
-        } else if (name === "TupleExpression" && paramName === `components`) {
-            datalogT = "ExpressionIdList";
         } else if (name === "ElementaryTypeName" && paramName === `stateMutability`) {
             datalogT = "ElementaryTypeNameMutability";
         } else if (name === "UserDefinedTypeName" && paramName === `name`) {
             datalogT = "symbol";
         } else if (name === "ForStatement" && paramName === `initializationExpression`) {
             datalogT = "ExpressionId";
-        } else if (
-            name === "InlineAssembly" &&
-            (paramName === `externalReferences` ||
-                paramName === `operations` ||
-                paramName === `flags` ||
-                paramName === `yul` ||
-                paramName === `evmVersion`)
-        ) {
-            // @todo Add this InlineAssembly fields
-            continue;
         } else if (name === "VariableDeclarationStatement" && paramName === `assignments`) {
+            // @todo remove
             datalogT = "VariableDeclarationIdList";
         } else if (name === "InheritanceSpecifier" && paramName === `baseType`) {
             datalogT = "id";
@@ -351,22 +315,18 @@ function buildNodeDecls(name, constructor, baseName) {
             datalogT = "IdentifierPathIdList";
         } else if (name === "ModifierInvocation" && paramName === `modifierName`) {
             datalogT = "id";
-        } else if (name === "ImportDirective" && paramName === `symbolAliases`) {
-            // @todo add vSymbolAliases instead of symbolAliases
-            continue;
         } else if (name === "ImportDirective" && paramName === `scope`) {
             datalogT = "SourceUnitId";
         } else if (name === "ImportDirective" && paramName === `sourceUnit`) {
             datalogT = "SourceUnitId";
         } else if (name === "OverrideSpecifier" && paramName === `overrides`) {
+            // @todo remove
             datalogT = "IdList";
         } else if (
             (name === "BinaryOperation" || name === "UnaryOperation") &&
             paramName === `userFunction`
         ) {
             datalogT = "id";
-        } else if (name === "UinsgForDirective" && paramName === `functionList`) {
-            datalogT = "UsingForFunctionList";
         } else {
             datalogT = translateType(type);
         }
@@ -436,10 +396,8 @@ function getDefaultValue(name, paramName, type) {
 }
 
 const unchagedArgTypes = new Set([
-    "string[]",
     "boolean",
     "number",
-    "string",
     "FunctionCallKind",
     "ContractKind",
     "DataLocation",
@@ -663,15 +621,19 @@ function translateFactArg(name, paramName, type) {
     }
 
     if (paramName === "typeString") {
-        ref = `escapeDoubleQuotes(handleMissingString(${ref}))`;
+        return `sanitizeString(${ref})`;
     }
 
-    // hex string literals may decode weirdly to strings resulting in un-terminated quotes.
-    // To guard against this don't emit value if this is kind is hexString
     if (name === `Literal` && paramName === `value`) {
-        // In at least one case in `test/samples/solidity/writer_edge_cases.sourced.sol` value can be null
-        ref = `handleMissingString(${ref})`;
-        ref = `nd.kind === sol.LiteralKind.HexString ? "" : ${ref}`;
+        return `nd.value === null ? "" : sanitizeString(${ref})`;
+    }
+
+    if (name === `Literal` && paramName === `hexValue`) {
+        return `nd.hexValue === null ? "" : sanitizeString(${ref})`;
+    }
+
+    if (type === "string") {
+        return `sanitizeString(${ref})`;
     }
 
     if (unchagedArgTypes.has(type)) {
@@ -680,28 +642,6 @@ function translateFactArg(name, paramName, type) {
 
     if (astClassNames.has(type)) {
         return ref;
-    }
-
-    if (type.endsWith("[]")) {
-        const baseName = type.slice(0, -2);
-
-        if (astClassNames.has(baseName)) {
-            return ref;
-        }
-    }
-
-    const m = type.match(iterableRE);
-
-    if (m !== null && astClassNames.has(m[1])) {
-        return ref;
-    }
-
-    if (type === `Map<string, number>`) {
-        return `new Literal(translateSymbolsMap(${ref}))`;
-    }
-
-    if (type === `Map<string, Expression>`) {
-        return `new Literal(translateExpressionsMap(${ref}))`;
     }
 
     if (
@@ -713,39 +653,35 @@ function translateFactArg(name, paramName, type) {
         return ref;
     }
 
-    if (
-        type === `Iterable<UserDefinedTypeName | IdentifierPath>` ||
-        type === "Iterable<IdentifierPath | UserDefinedTypeName>"
-    ) {
-        return ref;
-    }
-
-    if (type === `(IdentifierPath | UsingCustomizedOperator)[]`) {
-        return `translateUsingForFunctionList(${ref})`;
-    }
-
-    if (
-        name === "ContractDefinition" &&
-        (paramName === "linearizedBaseContracts" ||
-            paramName === "usedErrors" ||
-            paramName === "usedEvents")
-    ) {
-        return ref;
-    }
-
     if (name === `ElementaryTypeNameExpression` && paramName === `typeName`) {
         return `${ref} instanceof sol.ElementaryTypeName ? ${ref}.name : ${ref}`;
     }
 
-    if (name === `TupleExpression` && paramName === `components`) {
-        return `nd.vOriginalComponents.map((c) => c === null ? -1 : c.id)`;
-    }
-
-    if (name === "VariableDeclarationStatement" && paramName === `assignments`) {
-        return `nd.assignments.map((c) => c === null ? -1 : c)`;
-    }
-
     throw new Error(`Can't translate ${name}.${paramName} of type ${type}`);
+}
+
+function isTsTKnownArray(name, paramName, tsT) {
+    if (tsT.endsWith("[]")) {
+        const baseName = tsT.slice(0, -2);
+
+        if (astClassNames.has(baseName)) {
+            return true;
+        }
+    }
+
+    const m = tsT.match(iterableRE);
+
+    if (m !== null && astClassNames.has(m[1])) {
+        return true;
+    }
+
+    const fieldM = arrayFieldsToBaseTypesM.get(name);
+
+    if (fieldM) {
+        return fieldM.get(paramName) !== undefined;
+    }
+
+    return false;
 }
 
 function buildFactInvocation(name, constructor) {
@@ -759,27 +695,87 @@ function buildFactInvocation(name, constructor) {
 
     let res = ``;
 
-    let dynamicArgs = ["nd.id", "nd.src"];
+    // Add relations for map arguments
+    for (let [paramName, optional] of params.slice(2)) {
+        const args = [`\${nd.id}`];
 
+        if (name === "SourceUnit" && paramName === "exportedSymbols") {
+            args.push("${'\"' + k + '\"'}", `\${v}`);
+        } else if (name === "FunctionCallOptions" && paramName === `options`) {
+            args.push("${'\"' + k + '\"'}", `\${v.id}`);
+        } else {
+            continue;
+        }
+
+        assert(!optional, `Unexpected optional map param ${name}.${paramName}`);
+
+        if (paramRenameMap.has(name) && paramRenameMap.get(name).has(paramName)) {
+            paramName = paramRenameMap.get(name).get(paramName);
+        }
+
+        res += `
+    for (let [k, v] of nd.${paramName}.entries()) {
+        res.push(\`${name}_${paramName}(${args.join(", ")}).\`);
+    }
+`;
+    }
+
+    // Add relations for array arguments
     for (let [paramName, optional, type] of params.slice(2)) {
+        if (!isTsTKnownArray(name, paramName, type)) {
+            continue;
+        }
+
         if (skipFields.includes(paramName)) {
             continue;
         }
 
-        if (
-            name === "InlineAssembly" &&
-            (paramName === `externalReferences` ||
-                paramName === `operations` ||
-                paramName === `flags` ||
-                paramName === `yul` ||
-                paramName === `evmVersion`)
-        ) {
-            // @todo Add this InlineAssembly fields
-            continue;
+        if (paramRenameMap.has(name) && paramRenameMap.get(name).has(paramName)) {
+            paramName = paramRenameMap.get(name).get(paramName);
         }
 
-        if (name === "ImportDirective" && paramName === `symbolAliases`) {
-            // @todo add vSymbolAliases instead of symbolAliases
+        const args = [`\${nd.id}`];
+
+        if (type === `number[]`) {
+            args.push(`\${t}`);
+        } else if (type === `string[]`) {
+            args.push(`\${'"' + t + '"'}`);
+        } else if (
+            (name === "TupleExpression" && paramName === "components") ||
+            (name === "VariableDeclarationStatement" && paramName === "assignments")
+        ) {
+            args.push(`\${t === null ? -1 : t}`);
+        } else if (name === "UsingForDirective" && paramName === "vFunctionList") {
+            args.push(`\${t instanceof sol.ASTNode ? t.id : t.definition.id}`);
+            args.push(`\${t instanceof sol.ASTNode ? '""' : \`"\${t.operator}"\`}`);
+        } else if (name === "FunctionCall" && paramName === "fieldNames") {
+            args.push(`\${'"' + t + '"'}`);
+        } else {
+            args.push(`\${t.id}`);
+        }
+
+        args.push(`\${i}`);
+
+        let expr = `
+    for (let i = 0; i < nd.${paramName}.length; i++) {
+        let t = nd.${paramName}[i];
+        res.push(\`${name}_${paramName}(${args.join(", ")}).\`);
+    }
+`;
+        if (optional) {
+            expr = `if (nd.${paramName} !== undefined) {
+                ${expr}
+            }`;
+        }
+
+        res += expr;
+    }
+
+    // Build arguments to main relation for the node
+    let dynamicArgs = ["nd.id", "nd.src"];
+
+    for (let [paramName, optional, type] of params.slice(2)) {
+        if (shouldSkipField(name, paramName)) {
             continue;
         }
 
@@ -845,10 +841,12 @@ function buildFactBuilderFun(classDescs) {
     body += ` else {\n    throw new Error(\`Unknown AST node type \${nd.constructor.name}.\`);\n}`;
 
     return `
-export function translateASTNodeInternal(nd: sol.ASTNode): string {
+export function translateASTNodeInternal(nd: sol.ASTNode): string[] {
     let args: string[];
+    let res: string[] = [];
     ${body}
-    return \`\${nd.constructor.name}(\${args.join(", ")}).\`;
+    res.push(\`\${nd.constructor.name}(\${args.join(", ")}).\`);
+    return res;
 }
 `;
 }
@@ -911,7 +909,7 @@ async function main() {
     const factBuilderFun = buildFactBuilderFun(classes);
     const translateContents = `
 import * as sol from "solc-typed-ast";
-import { Literal, translateSymbolsMap, translateExpressionsMap, translateUsingForFunctionList, translateVals, escapeDoubleQuotes, handleMissingString } from "../lib/utils";
+import { translateVals, sanitizeString } from "../lib/utils";
 
 ${factBuilderFun}
 `;
