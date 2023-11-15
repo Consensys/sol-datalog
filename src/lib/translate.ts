@@ -26,7 +26,7 @@ function translateNode(nd: sol.ASTNode): string[] {
         res.push(`parent(${nd.parent.id}, ${nd.id}).`);
     }
 
-    res.push(translateASTNodeInternal(nd));
+    res.push(...translateASTNodeInternal(nd));
     return res;
 }
 

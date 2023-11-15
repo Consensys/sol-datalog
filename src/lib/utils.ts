@@ -74,16 +74,17 @@ export class Literal {
     constructor(public v: string) {}
 }
 
-export function handleMissingString(s: string): string {
-    return s === null || s === undefined ? "" : s;
-}
-
-export function escapeDoubleQuotes(s: string): string {
-    if (s === undefined) {
-        console.trace();
+export function sanitizeString(s: string): string {
+    // For various compiler versions a string may be missing in the AST
+    if (s === null || s === undefined) {
+        s = "";
     }
 
-    return s.replaceAll('"', "'");
+    return s
+        .replaceAll('"', "'") // Only single quotes
+        .replaceAll("\n", "\\n") // Escape new lines
+        .replaceAll("\r", "\\r") // Escape carriage return
+        .replaceAll(/[^\x20-\x7E]+/g, ""); // Remove remaining unicode characters
 }
 
 function translateVal(a: any): string {
