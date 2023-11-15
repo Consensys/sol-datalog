@@ -100,12 +100,6 @@ const staticPreamble = `
 
 .type SubdenominationT = TimeUnit | EtherUnit
 
-.type ExportedSymbolsList = [
-    id: id,
-    name: symbol,
-    tail : ExportedSymbolsList 
-]
-
 .type NamedExpressionIdList = [
     name: symbol,
     id: ExpressionId,
@@ -134,6 +128,8 @@ const staticPreamble = `
 
 .decl FunctionCall_fieldNames(parentId: FunctionCallId, name: symbol, idx: number)
 .decl PragmaDirective_literals(parentId: FunctionCallId, literal: symbol, idx: number)
+.decl SourceUnit_exportedSymbols(parentId: SourceUnitId, name: symbol, id: id)
+.decl FunctionCallOptions_vOptionsMap(parentId: FunctionCallOptionsId, name: symbol, id: id)
 `;
 
 const skipFields = ["raw", "documentation", "nameLocation", "children"];
@@ -157,7 +153,9 @@ const skipClassFieldsM = new Map([
     ["PragmaDirective", ["literals"]],
     ["StructDefinition", ["members"]],
     ["EnumDefinition", ["members"]],
-    ["UsingForDirective", ["functionList"]]
+    ["UsingForDirective", ["functionList"]],
+    ["SourceUnit", ["exportedSymbols"]],
+    ["FunctionCallOptions", ["options"]]
 ]);
 
 function shouldSkipField(className, fieldName) {
@@ -295,9 +293,7 @@ function buildNodeDecls(name, constructor, baseName) {
             type = type.slice(0, -12);
         }
 
-        if (name === "SourceUnit" && paramName === `exportedSymbols`) {
-            datalogT = `ExportedSymbolsList`;
-        } else if (name === "ContractDefinition" && paramName === `scope`) {
+        if (name === "ContractDefinition" && paramName === `scope`) {
             datalogT = "SourceUnitId";
         } else if (name === "VariableDeclaration" && paramName === `scope`) {
             datalogT = "id";
@@ -656,20 +652,6 @@ function translateFactArg(name, paramName, type) {
         return ref;
     }
 
-    const m = type.match(iterableRE);
-
-    if (m !== null && astClassNames.has(m[1])) {
-        return ref;
-    }
-
-    if (type === `Map<string, number>`) {
-        return `new Literal(translateSymbolsMap(${ref}))`;
-    }
-
-    if (type === `Map<string, Expression>`) {
-        return `new Literal(translateExpressionsMap(${ref}))`;
-    }
-
     if (
         type === `ExpressionStatement | VariableDeclarationStatement` ||
         type === `UserDefinedTypeName | IdentifierPath` ||
@@ -679,23 +661,8 @@ function translateFactArg(name, paramName, type) {
         return ref;
     }
 
-    if (
-        type === `Iterable<UserDefinedTypeName | IdentifierPath>` ||
-        type === "Iterable<IdentifierPath | UserDefinedTypeName>"
-    ) {
-        return ref;
-    }
-
-    if (type === `(IdentifierPath | UsingCustomizedOperator)[]`) {
-        return `translateUsingForFunctionList(${ref})`;
-    }
-
     if (name === `ElementaryTypeNameExpression` && paramName === `typeName`) {
         return `${ref} instanceof sol.ElementaryTypeName ? ${ref}.name : ${ref}`;
-    }
-
-    if (name === "VariableDeclarationStatement" && paramName === `assignments`) {
-        return `nd.assignments.map((c) => c === null ? -1 : c)`;
     }
 
     throw new Error(`Can't translate ${name}.${paramName} of type ${type}`);
@@ -736,8 +703,32 @@ function buildFactInvocation(name, constructor) {
 
     let res = ``;
 
-    let dynamicArgs = ["nd.id", "nd.src"];
+    // Add relations for map arguments
+    for (let [paramName, optional] of params.slice(2)) {
+        const args = [`\${nd.id}`];
 
+        if (name === "SourceUnit" && paramName === "exportedSymbols") {
+            args.push("${'\"' + k + '\"'}", `\${v}`);
+        } else if (name === "FunctionCallOptions" && paramName === `options`) {
+            args.push("${'\"' + k + '\"'}", `\${v.id}`);
+        } else {
+            continue;
+        }
+
+        assert(!optional, `Unexpected optional map param ${name}.${paramName}`);
+
+        if (paramRenameMap.has(name) && paramRenameMap.get(name).has(paramName)) {
+            paramName = paramRenameMap.get(name).get(paramName);
+        }
+
+        res += `
+    for (let [k, v] of nd.${paramName}.entries()) {
+        res.push(\`${name}_${paramName}(${args.join(", ")}).\`);
+    }
+`;
+    }
+
+    // Add relations for array arguments
     for (let [paramName, optional, type] of params.slice(2)) {
         if (!isTsTKnownArray(name, paramName, type)) {
             continue;
@@ -787,6 +778,9 @@ function buildFactInvocation(name, constructor) {
 
         res += expr;
     }
+
+    // Build arguments to main relation for the node
+    let dynamicArgs = ["nd.id", "nd.src"];
 
     for (let [paramName, optional, type] of params.slice(2)) {
         if (shouldSkipField(name, paramName)) {
@@ -923,7 +917,7 @@ async function main() {
     const factBuilderFun = buildFactBuilderFun(classes);
     const translateContents = `
 import * as sol from "solc-typed-ast";
-import { Literal, translateSymbolsMap, translateExpressionsMap, translateVals, sanitizeString } from "../lib/utils";
+import { translateVals, sanitizeString } from "../lib/utils";
 
 ${factBuilderFun}
 `;
