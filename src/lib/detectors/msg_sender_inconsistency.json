@@ -1,0 +1,10 @@
+{
+    "fileName": "msg_sender_inconsistency.dl",
+    "relationSignature": "msgSenderInconsistency_Detector(c1: id, f1: id, e1: id, c2: id, f2: id, e2: id)",
+    "locations": ["e1.src", "e2.src"],
+    "canonicalLocation": "e1.src",
+    "description": {
+        "head": "Inconsistent use of msg.sender and _msgSender",
+        "tail": "msg.sender is used in ${c1.name}.{f1.name} at ${e1.src} while _msgSender() is used in ${c2.name}.${f2.name} at ${e2.src}"
+    }
+}

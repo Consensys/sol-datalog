@@ -19,7 +19,7 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
-import { analyze, datalogFromUnits, readProducedCsvFiles, readProducedOutput } from "../lib";
+import { analyze, buildDatalog, getIssues, readProducedCsvFiles, readProducedOutput } from "../lib";
 
 const pkg = require("../../package.json");
 
@@ -295,10 +295,12 @@ async function main() {
             console.log(rel, entries);
         }
 
+        getIssues();
+
         return;
     }
 
-    console.log(datalogFromUnits(units));
+    console.log(buildDatalog(units));
 }
 
 main()

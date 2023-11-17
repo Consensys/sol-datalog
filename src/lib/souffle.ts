@@ -6,6 +6,7 @@ import path from "path";
 import * as sol from "solc-typed-ast";
 import { datalogFromUnits } from "./translate";
 import { parse } from "csv-parse/sync";
+import { searchRecursive } from "./utils";
 
 export function souffle(datalog: string): string {
     const tmpDir = os.tmpdir();
@@ -18,7 +19,7 @@ export function souffle(datalog: string): string {
 
     fse.writeFileSync(fileName, datalog, { encoding: "utf-8" });
 
-    const result = spawnSync("souffle", [fileName], { encoding: "utf-8" });
+    const result = spawnSync("souffle", ["--wno", "all", fileName], { encoding: "utf-8" });
 
     fse.removeSync(fileName);
 
@@ -31,10 +32,45 @@ export function souffle(datalog: string): string {
     return result.stdout;
 }
 
-export function analyze(units: sol.SourceUnit[], analysis: string): string {
-    const datalog = [datalogFromUnits(units), "// ======= ANALYSIS RELS =======", analysis].join(
-        "\n"
+export function getDLFromFolder(folder: string): string {
+    const fileNames = searchRecursive(folder, (f) => f.endsWith(".dl"));
+
+    const contents = fileNames.map(
+        (fileName) => `////// ${fileName} \n` + fse.readFileSync(fileName, { encoding: "utf-8" })
     );
+
+    return contents.join("\n");
+}
+
+export function getAnalyses(): string {
+    const analysesBaseDir = path.join(__dirname, "../analyses");
+    return getDLFromFolder(analysesBaseDir);
+}
+
+export function getDetectors(): string {
+    const analysesBaseDir = path.join(__dirname, "../detectors");
+    return getDLFromFolder(analysesBaseDir);
+}
+
+export function buildDatalog(units: sol.SourceUnit[]): string {
+    const unitsDL = datalogFromUnits(units);
+    const analyses = getAnalyses();
+    const detectors = getDetectors();
+    return [
+        unitsDL,
+        "// ======= ANALYSIS RELS =======",
+        analyses,
+        "// ======= DETECTORS RELS =======",
+        detectors
+    ].join("\n");
+}
+
+export function analyze(units: sol.SourceUnit[], additionalDatalog: string): string {
+    const datalog = [
+        buildDatalog(units),
+        "// ======= ADDITIONAL DATALOG =======",
+        additionalDatalog
+    ].join("\n");
 
     return souffle(datalog);
 }

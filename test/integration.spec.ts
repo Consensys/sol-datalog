@@ -1,10 +1,10 @@
 import expect from "expect";
 import fse from "fs-extra";
 import path from "path";
-import { searchRecursive } from "./utils";
 import { spawnSync } from "child_process";
 import * as sol from "solc-typed-ast";
 import { datalogFromUnits } from "../src";
+import { searchRecursive } from "../src/lib/utils";
 
 require("dotenv").config();
 
