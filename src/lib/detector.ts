@@ -1,8 +1,8 @@
 import fse from "fs-extra";
 import * as sol from "solc-typed-ast";
-import path from "path";
 import { searchRecursive } from "./utils";
 import { OutputRelations } from "./souffle";
+import { DETECTORS_DIR } from "./detectors";
 
 type SignatureArgs = Array<[string, string]>;
 type ParsedSignature = [string, SignatureArgs];
@@ -33,8 +33,7 @@ function loadDetectorTemplate(jsonPath: string): DetectorTemplate {
 }
 
 export function loadDetectors(): DetectorTemplate[] {
-    const folder = path.join(__dirname, "../detectors");
-    const fileNames = searchRecursive(folder, (f) => f.endsWith(".json"));
+    const fileNames = searchRecursive(DETECTORS_DIR, (f) => f.endsWith(".json"));
 
     return fileNames.map(loadDetectorTemplate);
 }

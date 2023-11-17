@@ -14,7 +14,7 @@
         "clean": "rm -rf dist/ && rm -rf src/gen/declarations.ts src/gen/translate.ts",
         "transpile": "tsc",
         "gen-translation-modules": "node scripts/gen_translation_modules.js && eslint --fix src/gen/translate.ts src/gen/declarations.ts",
-        "copy-dl": "cp -r src/lib/analyses dist/ && cp -r src/lib/detectors dist/",
+        "copy-dl": "cp -r src/lib/analyses dist/lib && cp -r src/lib/detectors dist/lib",
         "build": "npm run clean && npm run gen-translation-modules && npm run transpile && chmod a+x dist/bin/cli.js && npm run copy-dl",
         "test": "c8 mocha",
         "lint": "eslint src/ test/ --ext=ts",

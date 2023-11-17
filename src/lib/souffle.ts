@@ -6,6 +6,8 @@ import * as sol from "solc-typed-ast";
 import { datalogFromUnits } from "./translate";
 import { parse } from "csv-parse/sync";
 import { searchRecursive } from "./utils";
+import { ANALYSES_DIR } from "./analyses";
+import { DETECTORS_DIR } from "./detectors";
 
 export type OutputRelations = Map<string, string[][]>;
 
@@ -39,7 +41,7 @@ async function souffle(datalog: string): Promise<OutputRelations> {
 
     const res = readProducedCsvFiles(tmpDir);
 
-    fse.rm(tmpDir, { recursive: true });
+    fse.rmdirSync(tmpDir);
     return res;
 }
 
@@ -72,13 +74,11 @@ function getDLFromFolder(folder: string): string {
 }
 
 function getAnalyses(): string {
-    const analysesBaseDir = path.join(__dirname, "../analyses");
-    return getDLFromFolder(analysesBaseDir);
+    return getDLFromFolder(ANALYSES_DIR);
 }
 
 function getDetectors(): string {
-    const analysesBaseDir = path.join(__dirname, "../detectors");
-    return getDLFromFolder(analysesBaseDir);
+    return getDLFromFolder(DETECTORS_DIR);
 }
 
 export function buildDatalog(units: sol.SourceUnit[]): string {
