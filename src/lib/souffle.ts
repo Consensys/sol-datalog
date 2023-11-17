@@ -1,26 +1,35 @@
 import { spawnSync } from "child_process";
-import crypto from "crypto";
 import fse from "fs-extra";
 import os from "os";
-import path from "path";
+import path, { basename, join } from "path";
 import * as sol from "solc-typed-ast";
 import { datalogFromUnits } from "./translate";
 import { parse } from "csv-parse/sync";
+import { searchRecursive } from "./utils";
+import { ANALYSES_DIR } from "./analyses";
+import { DETECTORS_DIR } from "./detectors";
 
-export function souffle(datalog: string): string {
-    const tmpDir = os.tmpdir();
+export type OutputRelations = Map<string, string[][]>;
 
-    let fileName: string;
+/**
+ * Given some input datalog:
+ *
+ * 1. Make temp dir
+ * 2. Write datalog to file
+ * 3. Run souffle
+ * 4. Read resulting relations from tmp dir
+ * 5. Cleanup and return resulting relations
+ */
+async function souffle(datalog: string): Promise<OutputRelations> {
+    const sysTmpDir = os.tmpdir();
+    const tmpDir = await fse.mkdtempSync(join(sysTmpDir, "sol-datalog-"));
 
-    do {
-        fileName = path.join(tmpDir, "datalog-" + crypto.randomBytes(16).toString("hex") + ".dl");
-    } while (fse.existsSync(fileName));
-
+    const fileName: string = path.join(tmpDir, "input.dl");
     fse.writeFileSync(fileName, datalog, { encoding: "utf-8" });
 
-    const result = spawnSync("souffle", [fileName], { encoding: "utf-8" });
-
-    fse.removeSync(fileName);
+    const result = spawnSync("souffle", ["--wno", "all", "-D", tmpDir, fileName], {
+        encoding: "utf-8"
+    });
 
     if (result.status !== 0) {
         throw new Error(
@@ -28,31 +37,69 @@ export function souffle(datalog: string): string {
         );
     }
 
-    return result.stdout;
+    fse.removeSync(fileName);
+
+    const res = readProducedCsvFiles(tmpDir);
+
+    fse.rmdirSync(tmpDir);
+    return res;
 }
 
-export function analyze(units: sol.SourceUnit[], analysis: string): string {
-    const datalog = [datalogFromUnits(units), "// ======= ANALYSIS RELS =======", analysis].join(
-        "\n"
+export function readProducedCsvFiles(dir: string): Map<string, string[][]> {
+    const relMap = new Map<string, string[][]>();
+    const outputFiles = searchRecursive(dir, (x) => x.endsWith(".csv"));
+
+    for (const fileName of outputFiles) {
+        const rel = basename(fileName, ".csv");
+
+        const content = fse.readFileSync(fileName, { encoding: "utf-8" });
+        const entries = parseCsv(content);
+
+        relMap.set(rel, entries);
+
+        fse.removeSync(fileName);
+    }
+
+    return relMap;
+}
+
+function getDLFromFolder(folder: string): string {
+    const fileNames = searchRecursive(folder, (f) => f.endsWith(".dl"));
+
+    const contents = fileNames.map(
+        (fileName) => `////// ${fileName} \n` + fse.readFileSync(fileName, { encoding: "utf-8" })
     );
 
+    return contents.join("\n");
+}
+
+function getAnalyses(): string {
+    return getDLFromFolder(ANALYSES_DIR);
+}
+
+function getDetectors(): string {
+    return getDLFromFolder(DETECTORS_DIR);
+}
+
+export function buildDatalog(units: sol.SourceUnit[]): string {
+    const unitsDL = datalogFromUnits(units);
+    const analyses = getAnalyses();
+    const detectors = getDetectors();
+    return [
+        unitsDL,
+        "// ======= ANALYSIS RELS =======",
+        analyses,
+        "// ======= DETECTORS RELS =======",
+        detectors
+    ].join("\n");
+}
+
+export async function analyze(units: sol.SourceUnit[]): Promise<OutputRelations> {
+    const datalog = [buildDatalog(units)].join("\n");
     return souffle(datalog);
 }
 
-function extractOutputRelations(datalog: string): string[] {
-    const rxOutRel = /\.output\s+(\w+)/g;
-    const result: string[] = [];
-
-    let matches: RegExpExecArray | null;
-
-    while ((matches = rxOutRel.exec(datalog))) {
-        result.push(matches[1]);
-    }
-
-    return result;
-}
-
-export function parseCsv(content: string, delimiter = "\t"): string[][] {
+function parseCsv(content: string, delimiter = "\t"): string[][] {
     const config = {
         skipEmptyLines: true,
         cast: true,
@@ -60,26 +107,6 @@ export function parseCsv(content: string, delimiter = "\t"): string[][] {
     };
 
     return parse(content, config);
-}
-
-export function readProducedCsvFiles(datalog: string): Map<string, string[][]> {
-    const outRels = extractOutputRelations(datalog);
-    const relMap = new Map<string, string[][]>();
-
-    for (const rel of outRels) {
-        const fileName = rel + ".csv";
-
-        if (fse.existsSync(fileName)) {
-            const content = fse.readFileSync(fileName, { encoding: "utf-8" });
-            const entries = parseCsv(content);
-
-            relMap.set(rel, entries);
-
-            fse.removeSync(fileName);
-        }
-    }
-
-    return relMap;
 }
 
 export function readProducedOutput(output: string): Map<string, string[][]> {

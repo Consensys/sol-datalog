@@ -1,4 +1,6 @@
 import * as sol from "solc-typed-ast";
+import fse from "fs-extra";
+import path from "path";
 
 export function flatten<T>(arg: T[][]): T[] {
     const res: T[] = [];
@@ -66,4 +68,30 @@ function translateVal(a: any): string {
 export function translateVals(...a: any[]): string[] {
     // console.error(`translateVals`, a);
     return a.map(translateVal);
+}
+
+export function searchRecursive(targetPath: string, filter: (entry: string) => boolean): string[] {
+    const stat = fse.statSync(targetPath);
+    const results: string[] = [];
+
+    if (stat.isFile()) {
+        if (filter(targetPath)) {
+            results.push(path.resolve(targetPath));
+        }
+
+        return results;
+    }
+
+    for (const entry of fse.readdirSync(targetPath)) {
+        const resolvedEntry = path.resolve(targetPath, entry);
+        const stat = fse.statSync(resolvedEntry);
+
+        if (stat.isDirectory()) {
+            results.push(...searchRecursive(resolvedEntry, filter));
+        } else if (stat.isFile() && filter(resolvedEntry)) {
+            results.push(resolvedEntry);
+        }
+    }
+
+    return results;
 }

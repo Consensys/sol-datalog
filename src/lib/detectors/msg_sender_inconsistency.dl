@@ -1,0 +1,27 @@
+.decl funHasMsgSenderBuiltin(funId: id, eId: id)
+funHasMsgSenderBuiltin(funId, eId) :-
+    MemberAccess(eId, _, _, baseId, "sender", _),
+    Identifier(baseId, _, _, "msg", _),
+    ancestor(funId, eId).
+
+.decl funHasMsgSenderCall(funId: id, eId: id)
+funHasMsgSenderCall(funId, eId) :-
+    Identifier(eId, _, _, "_msgSender", _),
+    ancestor(funId, eId).
+
+/// Compute whether method f1 in contract c1 contains `msg.sender` in expression e1, while method f2 in class c2 contains `_msgSender` in e2  
+.decl msgSenderInconsistency_Detector(c1: id, f1: id, e1: id, c2: id, f2: id, e2: id)
+msgSenderInconsistency_Detector(c1, f1, e1, c2, f2, e2) :-
+    (c1 = c2 ;
+     c1 != c2, inherits(c1, c2);
+     c1 != c2, inherits(c2, c1)
+    ),
+    method(c1, msgSenderId),
+    function("_msgSender", msgSenderId),
+    functionIn(f1Name, f1, c1),
+    functionIn(f2Name, f2, c2),
+    funHasMsgSenderBuiltin(f1, e1),
+    funHasMsgSenderCall(f2, e2),
+    f1Name != "_msgSender".
+    
+.output msgSenderInconsistency_Detector

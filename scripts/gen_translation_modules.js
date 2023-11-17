@@ -319,9 +319,8 @@ function buildNodeDecls(name, constructor, baseName) {
             datalogT = "SourceUnitId";
         } else if (name === "ImportDirective" && paramName === `sourceUnit`) {
             datalogT = "SourceUnitId";
-        } else if (name === "OverrideSpecifier" && paramName === `overrides`) {
-            // @todo remove
-            datalogT = "IdList";
+        } else if (paramName === `referencedDeclaration` || paramName === `scope`) {
+            datalogT = "id";
         } else if (
             (name === "BinaryOperation" || name === "UnaryOperation") &&
             paramName === `userFunction`

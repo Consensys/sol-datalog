@@ -19,7 +19,7 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
-import { analyze, datalogFromUnits, readProducedCsvFiles, readProducedOutput } from "../lib";
+import { analyze, buildDatalog, getIssues } from "../lib";
 
 const pkg = require("../../package.json");
 
@@ -81,10 +81,8 @@ async function main() {
             "--download-compilers <compilerKind...>",
             `Download specified kind of supported compilers to compiler cache. Supports multiple entries.`
         )
-        .option(
-            "--analyze <analysis>",
-            'Translate Solidity to Datalog, append "analysis" statements, run Souffle and print results'
-        );
+        .option("--run-detectors", "Run defined detecotrs")
+        .option("--dump", "Dump generated DL");
 
     program.parse(process.argv);
 
@@ -281,24 +279,19 @@ async function main() {
     const reader = new ASTReader();
     const units = reader.read(result.data);
 
-    if (options.analyze) {
-        const analysis = options.analyze;
-        const output = analyze(units, analysis);
+    const datalog = buildDatalog(units);
 
-        // console.log(output);
-
-        const outRels = readProducedOutput(output);
-        const csvRels = readProducedCsvFiles(analysis);
-        const summary = new Map([...outRels, ...csvRels]);
-
-        for (const [rel, entries] of summary) {
-            console.log(rel, entries);
-        }
-
+    if (options.dump) {
+        console.log(datalog);
         return;
     }
 
-    console.log(datalogFromUnits(units));
+    if (options.runDetectors) {
+        const output = await analyze(units);
+        console.log(getIssues(output, reader.context));
+
+        return;
+    }
 }
 
 main()
