@@ -1,15 +1,26 @@
+/// Detector for inconsistent use of msg.detector and _msgDetector(). Should
+/// handle inheritance gracefully.
+
+/// HELPERS
+
+// Computes all function with id funId that have `msg.sender` expression with id eId
 .decl funHasMsgSenderBuiltin(funId: id, eId: id)
 funHasMsgSenderBuiltin(funId, eId) :-
     MemberAccess(eId, _, _, baseId, "sender", _),
     Identifier(baseId, _, _, "msg", _),
     ancestor(funId, eId).
 
+// Computes all function with id funId that have `_msgSender` expression with id eId
 .decl funHasMsgSenderCall(funId: id, eId: id)
 funHasMsgSenderCall(funId, eId) :-
     Identifier(eId, _, _, "_msgSender", _),
     ancestor(funId, eId).
 
-/// Compute whether method f1 in contract c1 contains `msg.sender` in expression e1, while method f2 in class c2 contains `_msgSender` in e2  
+/// MAIN DETECTOR RELATION
+
+/// Compute all methods with id f1 in contracts with id c1 that contain
+/// `msg.sender` in expression with id e1, and methods f2 in class c2 that
+/// contain `_msgSender` in e2.
 .decl msgSenderInconsistency_Detector(c1: id, f1: id, e1: id, c2: id, f2: id, e2: id)
 msgSenderInconsistency_Detector(c1, f1, e1, c2, f2, e2) :-
     (c1 = c2 ;

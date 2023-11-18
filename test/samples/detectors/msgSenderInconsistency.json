@@ -22,5 +22,13 @@
             "head": "Inconsistent use of msg.sender and _msgSender()",
             "tail": "msg.sender is used in Postive3.foo at 1108:10:0 while _msgSender() is used in Positive3Base.bar at 1019:10:0"
         }
+    },
+    {
+        "locations": ["1276:10:0", "1260:10:0"],
+        "canonicalLocation": "1276:10:0",
+        "description": {
+            "head": "Inconsistent use of msg.sender and _msgSender()",
+            "tail": "msg.sender is used in Positive4.bar at 1276:10:0 while _msgSender() is used in Positive4.bar at 1260:10:0"
+        }
     }
 ]

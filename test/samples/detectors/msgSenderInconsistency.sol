@@ -80,3 +80,14 @@ contract Postive3 is Positive3Base{
 	}
 
 }
+
+contract Positive4 {
+	function _msgSender() internal virtual returns (address) {
+		return msg.sender;
+	}
+
+	function bar() public {
+		_msgSender();
+		msg.sender;
+	}
+}

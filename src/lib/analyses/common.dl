@@ -1,22 +1,22 @@
-// Compute whether a node with ancestorId is the ancestor of a node with descendantId in the AST.
+// Compute all pairs of nodes (ancestorId, descendantId) where descendantId is a descendant ot ancestorId in the AST.
 .decl ancestor(ancestorId: id, descendantId: id)
 
 ancestor(x, y) :- parent(x, y).
 ancestor(x, y) :- parent(x, z), ancestor(z, y).
 
-// Compute whether there is a state var VariableDeclaration with a given name and id
+// Helper to get the name of a state var with a given id
 .decl stateVar(name: symbol, id: id)
 stateVar(name, id) :- VariableDeclaration(id, _, _, _, name, _, 1, _, _, _, _, _, _, _, _, _, _).
 
-// Compute whether there is a function definition with a given name and id
+// Helper to get the name of a function with a given id
 .decl function(name: symbol, id: id)
 function(name, id) :- FunctionDefinition(id, _, _, _, name, _, _, _, _, _, _, _, _, _, _).
 
-// Compute whether there is a function definition with a given name and id in a given contract
+// Helper to get the name of a function with a given id in a given contract (contractId)
 .decl functionIn(name: symbol, id: FunctionDefinitionId, contractId: id)
 functionIn(name, id, contractId) :- FunctionDefinition(id, _, contractId, _, name, _, _, _, _, _, _, _, _, _, _).
 
-// Compute whether there is a contract definition with a given name and id
+// Helper to get the name of a contract with a given id
 .decl contract(name: symbol, id: id)
 contract(name, id) :- ContractDefinition(id, _, name, _, _, _, _).
 
@@ -28,7 +28,6 @@ inherits(childContractId, baseContractId) :-
     ContractDefinition(baseContractId, _, _, _, _, _, _),
     ContractDefinition_linearizedBaseContracts(childContractId, baseContractId, _).
 
-/// Specifies that a method definition `methodId` belongs to contract `contractId` or one of its bases.
+/// Specifies that a method with `methodId` belongs to contract `contractId` or one of its bases.
 .decl method(contractId: ContractDefinitionId, methodId: FunctionDefinitionId)
 method(contractId, methodId) :- inherits(contractId, baseId), functionIn(_ ,methodId, baseId).
-
