@@ -82,7 +82,11 @@ async function main() {
             `Download specified kind of supported compilers to compiler cache. Supports multiple entries.`
         )
         .option("--run-detectors", "Run defined detecotrs")
-        .option("--dump", "Dump generated DL");
+        .option("--dump", "Dump generated DL")
+        .option(
+            "--dump-analyses <analysisName...>",
+            "Run analyses only and dump the results for the specified relations"
+        );
 
     program.parse(process.argv);
 
@@ -287,9 +291,19 @@ async function main() {
     }
 
     if (options.runDetectors) {
-        const output = await analyze(units);
+        const output = await analyze(units, "");
         console.log(getIssues(output, reader.context));
 
+        return;
+    }
+
+    if (options.dumpAnalyses) {
+        const outputDL = options.dumpAnalyses.map((x: string) => `.output ${x}`).join("\n");
+        const output = await analyze(units, outputDL);
+
+        for (const analysis of options.dumpAnalyses) {
+            console.log(analysis, output.get(analysis));
+        }
         return;
     }
 }

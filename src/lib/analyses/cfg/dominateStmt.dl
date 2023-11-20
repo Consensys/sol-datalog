@@ -32,7 +32,7 @@ dominateStmt(pred, succ) :-
 dominateStmt(pred, succ) :-
     Block(bId, _),
     Block_vStatements(bId, pred, i),
-    Block_vStatements(bId, succ, j).
+    Block_vStatements(bId, succ, i + 1).
 
 // UncheckedBlockStatement
 dominateStmt(pred, succ) :-
@@ -43,7 +43,7 @@ dominateStmt(pred, succ) :-
 dominateStmt(pred, succ) :-
     UncheckedBlock(bId, _),
     UncheckedBlock_vStatements(bId, pred, i),
-    UncheckedBlock_vStatements(bId, succ, j).
+    UncheckedBlock_vStatements(bId, succ, i + 1).
 
 // WhileStatement
 dominateStmt(pred, succ) :-

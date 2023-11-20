@@ -834,7 +834,7 @@ function buildFactInvocation(name, constructor) {
         dynamicArgs.push(dynamicArg);
 
         if (optional) {
-            dynamicArgs.push(`nd.${paramName} === undefined`);
+            dynamicArgs.push(`nd.${paramName} !== undefined`);
         }
     }
 
