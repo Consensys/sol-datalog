@@ -1,0 +1,66 @@
+.decl dominate(pred: id, succ: id)
+
+/// Dominate inherits from dominateStmt for statements
+dominate(pred, succ) :-
+    dominateStmt(pred, succ).
+
+/// If statement A dominates statement B, then all ExpressionStatement in
+/// statement A dominate all expressions in statement B
+dominate(pred, succ) :-
+    dominateStmt(A, B),
+    ancestor(A, pred),
+    Expression(pred),
+    ancestor(B, succ),
+    Expression(succ).
+
+/// All expressions "syntactically" inside a statement must evaluate before its
+/// conisdered "executed"
+dominate(pred, succ) :-
+    Statement(succ),
+    ancestor(succ, pred),
+    Expression(pred).
+
+/// All expressions "syntactically" inside another expression must finish evaluating
+/// before the parent expression has evaluated
+dominate(pred, succ) :-
+    Expression(succ),
+    ancestor(succ, pred),
+    Expression(pred).
+
+/// Assignment
+dominate(pred, succ) :-
+    Assignment(_, _, _, _, succ, pred).
+
+/// BinaryOperation
+dominate(pred, succ) :-
+    BinaryOperation(boId, _, _, _, pred, succ, _, _).
+
+/// Conditional
+dominate(pred, succ) :-
+    Conditional(_, _, _, pred, succ, _).
+
+dominate(pred, succ) :-
+    Conditional(_, _, _, pred, _, succ).
+
+/// FunctionCall
+dominate(pred, succ) :-
+    FunctionCall(fcId, _, _, _, _),
+    FunctionCall_vArguments(fcId, pred, i),
+    FunctionCall_vArguments(fcId, succ, i + 1).
+
+/// IndexAccess
+dominate(pred, succ) :-
+    IndexAccess(_, _, _, succ, pred, 1).
+
+/// IndexRangeAccess
+dominate(pred, succ) :-
+    IndexRangeAccess(_, _, _, succ, pred, 1, _, _).
+
+dominate(pred, succ) :-
+    IndexRangeAccess(_, _, _, succ, _, _, pred, 1).
+
+/// TupleExpression
+dominate(pred, succ) :-
+    TupleExpression(tId, _, _, _),
+    TupleExpression_components(tId, pred, i),
+    TupleExpression_components(tId, succ, i + 1).

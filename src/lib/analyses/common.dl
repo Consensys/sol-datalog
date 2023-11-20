@@ -31,3 +31,14 @@ inherits(childContractId, baseContractId) :-
 /// Specifies that a method with `methodId` belongs to contract `contractId` or one of its bases.
 .decl method(contractId: ContractDefinitionId, methodId: FunctionDefinitionId)
 method(contractId, methodId) :- inherits(contractId, baseId), functionIn(_ ,methodId, baseId).
+
+.decl ModifierInvocation_vReferencedDeclaration(mId: id, rId: id)
+ModifierInvocation_vReferencedDeclaration(mId, rId) :-
+    ModifierInvocation(mId, _, mNameId, _, _),
+    (Identifier(mNameId, _, _, _, rId); IdentifierPath(mNameId, _, _, rId)).
+
+.decl modifierInvocation_isModifier(mid: id)
+modifierInvocation_isModifier(mId) :-
+    ModifierInvocation(mId, _, _, _, _),
+    ModifierInvocation_vReferencedDeclaration(mId, rId),
+    ModifierDefinition(rId, _, _, _, _, _, _, _, _, _).
