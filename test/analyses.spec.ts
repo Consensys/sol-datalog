@@ -1,16 +1,18 @@
 import expect from "expect";
 import fse from "fs-extra";
 import * as sol from "solc-typed-ast";
-import { Issue, analyze, getIssues } from "../src";
+import { OutputRelations, analyze } from "../src";
 import { searchRecursive } from "../src/lib/utils";
 
-const samples = searchRecursive("test/samples/detectors", (fileName) => fileName.endsWith(".sol"));
+const samples = searchRecursive("test/samples/analyses", (fileName) => fileName.endsWith(".json"));
 
-describe("Detectors", () => {
-    for (const sample of samples) {
+describe("Analyses", () => {
+    for (const json of samples) {
+        const sample = json.replace(".json", ".sol");
+
         describe(sample, () => {
             let units: sol.SourceUnit[];
-            let expectedIssues: Issue[];
+            let expectedOutput: OutputRelations;
             let reader: sol.ASTReader;
 
             before(async () => {
@@ -26,16 +28,20 @@ describe("Detectors", () => {
 
                 expect(units.length).toBeGreaterThanOrEqual(1);
 
-                expectedIssues = fse.readJSONSync(sample.replace(".sol", ".json"), {
+                expectedOutput = fse.readJSONSync(json, {
                     encoding: "utf-8"
-                }) as Issue[];
+                }) as OutputRelations;
             });
 
             it("Detectors produce expected results", async () => {
-                const analysisResults = await analyze(units, "");
+                const targetAnalyses = [...Object.keys(expectedOutput)];
+                const addtionalDL = targetAnalyses.map((x: string) => `.output ${x}`).join("\n");
 
-                const actualIssues = getIssues(analysisResults, reader.context);
-                expect(actualIssues).toEqual(expectedIssues);
+                const analysisResults = await analyze(units, addtionalDL);
+
+                for (const [key, val] of Object.entries(expectedOutput)) {
+                    expect(analysisResults.get(key)).toEqual(val);
+                }
             });
         });
     }

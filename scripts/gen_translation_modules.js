@@ -101,6 +101,11 @@ const staticPreamble = `
 .type SubdenominationT = TimeUnit | EtherUnit
 
 .decl parent(parentId: id, childId: id)
+.decl Expression(id: id)
+.decl Statement(id: id)
+.decl StatementWithChildren(id: id)
+.decl PrimaryExpression(id: id)
+.decl TypeName(id: id)
 .decl ContractDefinition_linearizedBaseContracts(parentId: ContractDefinitionId, childId: ContractDefinitionId, idx: number)
 .decl ContractDefinition_usedErrors(parentId: ContractDefinitionId, childId: ErrorDefinitionId, idx: number)
 .decl ContractDefinition_usedEvents(parentId: ContractDefinitionId, childId: EventDefinitionId, idx: number)
@@ -337,11 +342,29 @@ function buildNodeDecls(name, constructor, baseName) {
         }
     }
 
+    if (idBaseType !== "id") {
+        res.push(
+            `${idBaseType.slice(0, -2)}(id) :- ${name}(id, ${repeat(
+                "_",
+                dynamicArgs.length + 1
+            ).join(", ")}).`
+        );
+    }
+
     res.push(
         `.decl ${name}(id: ${name}Id, src: symbol${
             dynamicArgs.length > 0 ? ", " + dynamicArgs.join(", ") : ""
         })`
     );
+
+    return res;
+}
+
+function repeat(a, n) {
+    const res = [];
+    for (let i = 0; i < n; i++) {
+        res.push(a);
+    }
 
     return res;
 }
@@ -811,7 +834,7 @@ function buildFactInvocation(name, constructor) {
         dynamicArgs.push(dynamicArg);
 
         if (optional) {
-            dynamicArgs.push(`nd.${paramName} === undefined`);
+            dynamicArgs.push(`nd.${paramName} !== undefined`);
         }
     }
 

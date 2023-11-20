@@ -94,8 +94,11 @@ export function buildDatalog(units: sol.SourceUnit[]): string {
     ].join("\n");
 }
 
-export async function analyze(units: sol.SourceUnit[]): Promise<OutputRelations> {
-    const datalog = [buildDatalog(units)].join("\n");
+export async function analyze(
+    units: sol.SourceUnit[],
+    additionalDL: string
+): Promise<OutputRelations> {
+    const datalog = [buildDatalog(units), additionalDL].join("\n");
     return souffle(datalog);
 }
 
