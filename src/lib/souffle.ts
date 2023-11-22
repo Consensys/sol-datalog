@@ -24,7 +24,8 @@ async function souffle(datalog: string): Promise<OutputRelations> {
     const sysTmpDir = os.tmpdir();
     const tmpDir = await fse.mkdtempSync(join(sysTmpDir, "sol-datalog-"));
 
-    const fileName: string = path.join(tmpDir, "input.dl");
+    const fileName = path.join(tmpDir, "input.dl");
+
     fse.writeFileSync(fileName, datalog, { encoding: "utf-8" });
 
     const result = spawnSync("souffle", ["--wno", "all", "-D", tmpDir, fileName], {
@@ -42,12 +43,13 @@ async function souffle(datalog: string): Promise<OutputRelations> {
     const res = readProducedCsvFiles(tmpDir);
 
     fse.rmdirSync(tmpDir);
+
     return res;
 }
 
-export function readProducedCsvFiles(dir: string): Map<string, string[][]> {
+export function readProducedCsvFiles(dir: string): OutputRelations {
     const relMap = new Map<string, string[][]>();
-    const outputFiles = searchRecursive(dir, (x) => x.endsWith(".csv"));
+    const outputFiles = searchRecursive(dir, (f) => f.endsWith(".csv"));
 
     for (const fileName of outputFiles) {
         const rel = basename(fileName, ".csv");
@@ -99,6 +101,7 @@ export async function analyze(
     additionalDL: string
 ): Promise<OutputRelations> {
     const datalog = [buildDatalog(units), additionalDL].join("\n");
+
     return souffle(datalog);
 }
 
@@ -112,7 +115,7 @@ function parseCsv(content: string, delimiter = "\t"): string[][] {
     return parse(content, config);
 }
 
-export function readProducedOutput(output: string): Map<string, string[][]> {
+export function readProducedOutput(output: string): OutputRelations {
     const relMarker = "---------------";
     const bodyMarker = "===============";
     const relMap = new Map<string, string[][]>();

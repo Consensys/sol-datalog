@@ -11,10 +11,9 @@ describe("Detectors", () => {
         describe(sample, () => {
             let units: sol.SourceUnit[];
             let expectedIssues: Issue[];
-            let reader: sol.ASTReader;
+            let ctx: sol.ASTContext;
 
             before(async () => {
-                reader = new sol.ASTReader();
                 const result = await sol.compileSol(sample, "auto");
 
                 const data = result.data;
@@ -22,19 +21,23 @@ describe("Detectors", () => {
 
                 expect(errors).toHaveLength(0);
 
+                const reader = new sol.ASTReader();
+
                 units = reader.read(data);
+                ctx = reader.context;
 
                 expect(units.length).toBeGreaterThanOrEqual(1);
 
                 expectedIssues = fse.readJSONSync(sample.replace(".sol", ".json"), {
                     encoding: "utf-8"
-                }) as Issue[];
+                });
             });
 
             it("Detectors produce expected results", async () => {
                 const analysisResults = await analyze(units, "");
 
-                const actualIssues = getIssues(analysisResults, reader.context);
+                const actualIssues = getIssues(analysisResults, ctx);
+
                 expect(actualIssues).toEqual(expectedIssues);
             });
         });

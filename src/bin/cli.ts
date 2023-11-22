@@ -283,15 +283,17 @@ async function main() {
     const reader = new ASTReader();
     const units = reader.read(result.data);
 
-    const datalog = buildDatalog(units);
-
     if (options.dump) {
+        const datalog = buildDatalog(units);
+
         console.log(datalog);
+
         return;
     }
 
     if (options.runDetectors) {
         const output = await analyze(units, "");
+
         console.log(getIssues(output, reader.context));
 
         return;
@@ -304,6 +306,7 @@ async function main() {
         for (const analysis of options.dumpAnalyses) {
             console.log(analysis, output.get(analysis));
         }
+
         return;
     }
 }

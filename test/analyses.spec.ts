@@ -13,10 +13,8 @@ describe("Analyses", () => {
         describe(sample, () => {
             let units: sol.SourceUnit[];
             let expectedOutput: OutputRelations;
-            let reader: sol.ASTReader;
 
             before(async () => {
-                reader = new sol.ASTReader();
                 const result = await sol.compileSol(sample, "auto");
 
                 const data = result.data;
@@ -24,13 +22,11 @@ describe("Analyses", () => {
 
                 expect(errors).toHaveLength(0);
 
-                units = reader.read(data);
+                units = new sol.ASTReader().read(data);
 
                 expect(units.length).toBeGreaterThanOrEqual(1);
 
-                expectedOutput = fse.readJSONSync(json, {
-                    encoding: "utf-8"
-                }) as OutputRelations;
+                expectedOutput = fse.readJSONSync(json, { encoding: "utf-8" });
             });
 
             it("Detectors produce expected results", async () => {
