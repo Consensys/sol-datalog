@@ -22,9 +22,10 @@ export type OutputRelations = Map<string, string[][]>;
  */
 async function souffle(datalog: string): Promise<OutputRelations> {
     const sysTmpDir = os.tmpdir();
-    const tmpDir = await fse.mkdtempSync(join(sysTmpDir, "sol-datalog-"));
+    const tmpDir = await fse.mkdtemp(join(sysTmpDir, "sol-datalog-"));
 
-    const fileName: string = path.join(tmpDir, "input.dl");
+    const fileName = path.join(tmpDir, "input.dl");
+
     fse.writeFileSync(fileName, datalog, { encoding: "utf-8" });
 
     const result = spawnSync("souffle", ["--wno", "all", "-D", tmpDir, fileName], {
@@ -37,11 +38,12 @@ async function souffle(datalog: string): Promise<OutputRelations> {
         );
     }
 
-    fse.removeSync(fileName);
+    await fse.remove(fileName);
 
     const res = readProducedCsvFiles(tmpDir);
 
-    fse.rmdirSync(tmpDir);
+    await fse.rmdir(tmpDir);
+
     return res;
 }
 

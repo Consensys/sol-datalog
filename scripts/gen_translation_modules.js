@@ -9,7 +9,7 @@ require("dotenv").config();
  *
  * const solAstDir = path.dirname(require.resolve("solc-typed-ast"));
  */
-const solAstDir = process.env["SOLC_TYPED_AST_DIR"];
+const solAstDir = process.env.SOLC_TYPED_AST_DIR;
 
 const astFiles = [
     "ast/implementation/meta/source_unit.ts",

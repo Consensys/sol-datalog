@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import express from "express";
 import fse from "fs-extra";
+import path from "path";
 import {
     ASTReader,
     CACHE_DIR,
@@ -21,6 +23,8 @@ import {
 } from "solc-typed-ast";
 import { analyze, buildDatalog, getIssues } from "../lib";
 
+require("dotenv").config();
+
 const pkg = require("../../package.json");
 
 enum CompileMode {
@@ -31,7 +35,7 @@ enum CompileMode {
 
 const compileModes = Object.values(CompileMode);
 
-async function main() {
+async function main(): Promise<void> {
     const program = new Command();
 
     program
@@ -81,11 +85,15 @@ async function main() {
             "--download-compilers <compilerKind...>",
             `Download specified kind of supported compilers to compiler cache. Supports multiple entries.`
         )
-        .option("--run-detectors", "Run defined detecotrs")
-        .option("--dump", "Dump generated DL")
+        .option("--run-detectors", "Run defined detectors")
+        .option("--dump", "Dump generated datalog")
         .option(
             "--dump-analyses <analysisName...>",
             "Run analyses only and dump the results for the specified relations"
+        )
+        .option(
+            "--code-search",
+            "Compile units, builds datalog and starts a web-server to process input requests"
         );
 
     program.parse(process.argv);
@@ -305,6 +313,50 @@ async function main() {
             console.log(analysis, output.get(analysis));
         }
         return;
+    }
+
+    if (options.codeSearch) {
+        const webPath = path.join(__dirname, "../../web");
+        const port = process.env.SERVER_PORT || 3000;
+
+        const app = express();
+
+        app.use(express.json());
+        app.use("/static", express.static(webPath));
+
+        app.get("/", async (request, response) => {
+            console.log(request.url);
+
+            response.sendFile(path.join(webPath, "/index.html"));
+        });
+
+        app.get("/meta", (request, response) => {
+            console.log(request.url);
+
+            response.json({ args, options });
+        });
+
+        app.post("/query", async (request, response) => {
+            console.log(request.url, request.body);
+
+            const query = request.body.query;
+
+            try {
+                const output = await analyze(units, query);
+
+                response.json(Object.fromEntries(output.entries()));
+            } catch (e: any) {
+                response.json({ error: e.message });
+            }
+        });
+
+        return new Promise<void>((resolve) => {
+            const server = app.listen(port, () => {
+                console.log("Server is listening", server.address());
+            });
+
+            server.on("close", resolve);
+        });
     }
 }
 
