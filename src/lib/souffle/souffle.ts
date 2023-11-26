@@ -51,11 +51,9 @@ export async function analyze(
     const datalog = buildDatalog(units);
 
     const instance =
-        mode === "csv"
-            ? new SouffleCSVInstance(datalog, outputRelations)
-            : new SouffleSQLiteInstance(datalog, outputRelations);
+        mode === "csv" ? new SouffleCSVInstance(datalog) : new SouffleSQLiteInstance(datalog);
 
-    await instance.run();
+    await instance.run(outputRelations);
     return instance;
 }
 

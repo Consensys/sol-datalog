@@ -25,7 +25,6 @@ export abstract class SouffleInstance {
 
     constructor(
         private readonly datalog: string,
-        private readonly outputRelations: string[],
         private readonly outputRelationsMode: SouffleOutputType
     ) {
         this.success = false;
@@ -34,13 +33,13 @@ export abstract class SouffleInstance {
         this._relations = new Map(getRelations(this.datalog, this.env).map((r) => [r.name, r]));
     }
 
-    async run(): Promise<void> {
+    async run(outputRelations: string[]): Promise<void> {
         const sysTmpDir = os.tmpdir();
         this.tmpDir = await fse.mkdtempSync(join(sysTmpDir, "sol-datalog-"));
 
         this.inputFile = join(this.tmpDir, "input.dl");
 
-        const outputDirectives = this.outputRelations.map((reln) =>
+        const outputDirectives = outputRelations.map((reln) =>
             this.outputRelationsMode === "csv"
                 ? `.output ${reln}`
                 : `.output ${reln}(IO=sqlite, dbname="output.sqlite")`
@@ -48,7 +47,7 @@ export abstract class SouffleInstance {
 
         this.outputFiles =
             this.outputRelationsMode === "csv"
-                ? this.outputRelations.map((reln) => join(this.tmpDir, `${reln}.csv`))
+                ? outputRelations.map((reln) => join(this.tmpDir, `${reln}.csv`))
                 : [join(this.tmpDir, "output.sqlite")];
 
         const finalDL = this.datalog + "\n" + outputDirectives.join("\n");
@@ -85,8 +84,8 @@ export abstract class SouffleInstance {
 }
 
 export class SouffleCSVInstance extends SouffleInstance {
-    constructor(datalog: string, outputRelations: string[]) {
-        super(datalog, outputRelations, "csv");
+    constructor(datalog: string) {
+        super(datalog, "csv");
     }
 
     results(): OutputRelations {
@@ -124,12 +123,12 @@ export class SouffleCSVInstance extends SouffleInstance {
 export class SouffleSQLiteInstance extends SouffleInstance {
     private db!: Database;
 
-    constructor(datalog: string, outputRelations: string[]) {
-        super(datalog, outputRelations, "sqlite");
+    constructor(datalog: string) {
+        super(datalog, "sqlite");
     }
 
-    async run(): Promise<void> {
-        await super.run();
+    async run(outputRelations: string[]): Promise<void> {
+        await super.run(outputRelations);
 
         this.db = await open({
             filename: this.outputFiles[0],
