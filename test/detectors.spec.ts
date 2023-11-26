@@ -1,7 +1,7 @@
 import expect from "expect";
 import fse from "fs-extra";
 import * as sol from "solc-typed-ast";
-import { Issue, analyze, getIssues } from "../src";
+import { Issue, detect } from "../src";
 import { searchRecursive } from "../src/lib/utils";
 
 const samples = searchRecursive("test/samples/detectors", (fileName) => fileName.endsWith(".sol"));
@@ -32,9 +32,7 @@ describe("Detectors", () => {
             });
 
             it("Detectors produce expected results", async () => {
-                const analysisResults = await analyze(units, "");
-
-                const actualIssues = getIssues(analysisResults, reader.context);
+                const actualIssues = await detect(units, reader.context);
                 expect(actualIssues).toEqual(expectedIssues);
             });
         });

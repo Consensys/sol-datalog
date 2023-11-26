@@ -3,6 +3,7 @@ import fse from "fs-extra";
 import * as sol from "solc-typed-ast";
 import { OutputRelations, analyze } from "../src";
 import { searchRecursive } from "../src/lib/utils";
+import { SouffleCSVInstance } from "../src/lib/instance";
 
 const samples = searchRecursive("test/samples/analyses", (fileName) => fileName.endsWith(".json"));
 
@@ -35,9 +36,13 @@ describe("Analyses", () => {
 
             it("Detectors produce expected results", async () => {
                 const targetAnalyses = [...Object.keys(expectedOutput)];
-                const addtionalDL = targetAnalyses.map((x: string) => `.output ${x}`).join("\n");
-
-                const analysisResults = await analyze(units, addtionalDL);
+                const instance = (await analyze(
+                    units,
+                    "csv",
+                    targetAnalyses
+                )) as SouffleCSVInstance;
+                const analysisResults = instance.results();
+                instance.release();
 
                 for (const [key, val] of Object.entries(expectedOutput)) {
                     expect(analysisResults.get(key)).toEqual(val);
