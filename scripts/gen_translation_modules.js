@@ -98,7 +98,7 @@ const staticPreamble = `
 .type FunctionVisibility <: symbol
 .type ElementaryTypeNameMutability <: symbol
 
-.type SubdenominationT = TimeUnit | EtherUnit
+.type SubdenominationT <: symbol
 
 .decl parent(parentId: id, childId: id)
 .decl Expression(id: id)

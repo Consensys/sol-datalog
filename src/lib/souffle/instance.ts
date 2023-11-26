@@ -2,12 +2,15 @@ import { spawnSync } from "child_process";
 import fse from "fs-extra";
 import os from "os";
 import { basename, join } from "path";
-import { OutputRelations } from "./souffle";
+import { OutputRelations } from "../souffle";
 import * as sol from "solc-typed-ast";
-import { searchRecursive } from "./utils";
+import { searchRecursive } from "../utils";
 import { parse } from "csv-parse/sync";
 import sqlite3 from "sqlite3";
 import { open, Database } from "sqlite";
+import { TypeEnv, buildTypeEnv } from "./types";
+import { Relation, getRelations } from "./relation";
+import { Fact } from "./fact";
 
 export type SouffleOutputType = "csv" | "sqlite";
 
@@ -17,12 +20,18 @@ export abstract class SouffleInstance {
     protected outputFiles!: string[];
     protected success: boolean;
 
+    protected env: TypeEnv;
+    protected _relations: Map<string, Relation>;
+
     constructor(
         private readonly datalog: string,
         private readonly outputRelations: string[],
         private readonly outputRelationsMode: SouffleOutputType
     ) {
         this.success = false;
+
+        this.env = buildTypeEnv(this.datalog);
+        this._relations = new Map(getRelations(this.datalog, this.env).map((r) => [r.name, r]));
     }
 
     async run(): Promise<void> {
@@ -69,6 +78,10 @@ export abstract class SouffleInstance {
 
         fse.rmdirSync(this.tmpDir);
     }
+
+    relations(): Iterable<Relation> {
+        return this._relations.values();
+    }
 }
 
 export class SouffleCSVInstance extends SouffleInstance {
@@ -109,17 +122,27 @@ export class SouffleCSVInstance extends SouffleInstance {
 }
 
 export class SouffleSQLiteInstance extends SouffleInstance {
+    private db!: Database;
+
     constructor(datalog: string, outputRelations: string[]) {
         super(datalog, outputRelations, "sqlite");
     }
 
-    async result(): Promise<Database> {
-        sol.assert(this.success, ``);
-        const db = await open({
-            filename: "/tmp/database.db",
-            driver: sqlite3.cached.Database
-        });
+    async run(): Promise<void> {
+        await super.run();
 
-        return db;
+        this.db = await open({
+            filename: this.outputFiles[0],
+            driver: sqlite3.Database
+        });
+    }
+
+    async getRelation(name: string): Promise<Fact[]> {
+        const r = this._relations.get(name);
+        sol.assert(r !== undefined, `Uknown relation ${name}`);
+
+        const rawRes = await this.db.all(`SELECT * from ${name}`);
+
+        return Fact.fromSQLRows(r, rawRes);
     }
 }

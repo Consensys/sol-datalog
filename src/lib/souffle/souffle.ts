@@ -1,11 +1,11 @@
 import fse from "fs-extra";
 import * as sol from "solc-typed-ast";
-import { datalogFromUnits } from "./translate";
-import { searchRecursive } from "./utils";
-import { ANALYSES_DIR } from "./analyses";
-import { DETECTORS_DIR } from "./detectors";
+import { datalogFromUnits } from "../translate";
+import { searchRecursive } from "../utils";
+import { ANALYSES_DIR } from "../analyses";
+import { DETECTORS_DIR } from "../detectors";
 import { SouffleCSVInstance, SouffleOutputType, SouffleSQLiteInstance } from "./instance";
-import { Issue, getIssues, loadDetectors, parseTemplateSignature } from "./detector";
+import { Issue, getIssues, loadDetectors, parseTemplateSignature } from "../detector";
 
 export type OutputRelations = Map<string, string[][]>;
 
@@ -55,7 +55,7 @@ export async function analyze(
             ? new SouffleCSVInstance(datalog, outputRelations)
             : new SouffleSQLiteInstance(datalog, outputRelations);
 
-    instance.run();
+    await instance.run();
     return instance;
 }
 

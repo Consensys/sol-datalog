@@ -20,7 +20,7 @@ import {
     isExact
 } from "solc-typed-ast";
 import { analyze, buildDatalog, detect } from "../lib";
-import { SouffleCSVInstance } from "../lib/instance";
+import { SouffleCSVInstance } from "../lib/souffle/instance";
 
 const pkg = require("../../package.json");
 
