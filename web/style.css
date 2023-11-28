@@ -76,6 +76,16 @@
     overflow: scroll;
 }
 
+#datalog pre {
+    min-height: 100px;
+    max-height: 450px;
+    width: 100%;
+
+    padding: 5px 0;
+
+    overflow: scroll;
+}
+
 .input {
     height: 100px;
     width: 100%;
