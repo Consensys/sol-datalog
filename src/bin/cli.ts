@@ -336,6 +336,12 @@ async function main(): Promise<void> {
             response.json({ args, options });
         });
 
+        app.get("/datalog", (request, response) => {
+            console.log(request.url);
+
+            response.json({ datalog });
+        });
+
         app.post("/query", async (request, response) => {
             console.log(request.url, request.body);
 

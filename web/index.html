@@ -6,26 +6,39 @@
         <link rel="stylesheet" type="text/css" href="./static/style.css" />
     </head>
     <body>
-        <div class="row">
-            <div class="section query column">
-                <span>Datalog query</span>
+        <ul class="navbar">
+            <li><a data-target="query" href="javascript: void(0)">Query</a></li>
+            <li><a data-target="datalog" href="javascript: void(0)">Datalog</a></li>
+        </ul>
+        <div id="query" class="container">
+            <div class="row">
+                <div class="section query column">
+                    <span>Datalog query</span>
 
-                <button class="query float-right">Run</button>
+                    <button class="query float-right">Run</button>
 
-                <textarea class="input" placeholder="Type Datalog here..."></textarea>
+                    <textarea class="input" placeholder="Type Datalog here..."></textarea>
+                </div>
+
+                <div class="section meta column">
+                    <span>Setup</span>
+
+                    <button class="refresh-meta float-right">Refresh</button>
+
+                    <pre></pre>
+                </div>
             </div>
 
-            <div class="section meta column">
-                <span>Setup</span>
-
-                <button class="refresh-meta float-right">Refresh</button>
-
-                <pre></pre>
+            <div class="section">
+                <pre class="output">... Results would be displayed here ...</pre>
             </div>
         </div>
+        <div id="datalog" class="container">
+            <div class="section">
+                <button class="refresh-dl float-right">Refresh</button>
 
-        <div class="section">
-            <pre class="output">... Results would be displayed here ...</pre>
+                <pre class="output"></pre>
+            </div>
         </div>
 
         <script type="text/javascript" src="./static/main.js"></script>

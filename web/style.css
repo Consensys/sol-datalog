@@ -1,3 +1,33 @@
+.navbar {
+    list-style-type: none;
+    margin: 0px 5px;
+    padding: 0;
+}
+
+.navbar li {
+    display: inline-block;
+    margin: 0;
+}
+
+.navbar li a {
+    display: block;
+    padding: 10px;
+    background-color: #ddd;
+    text-decoration: none;
+    color: #444;
+}
+
+.navbar li a:hover,
+.navbar li a.current {
+    background-color: #444;
+    color: #ddd;
+}
+
+.navbar li a.current {
+    background-color: #777;
+    color: #eee;
+}
+
 .section {
     background: #e0e0e0;
     border: 1px solid #ccc;
