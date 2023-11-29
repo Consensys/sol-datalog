@@ -79,3 +79,39 @@ contract Z is X() {
         _;
     }
 }
+
+// ----------------------------------------
+
+contract S {
+    uint8[] public arr;
+
+    modifier bef(uint8 v) {
+        arr.push(v);
+
+        _;
+    }
+
+    modifier aft(uint8 v) {
+        _;
+
+        arr.push(v);
+    }
+
+    constructor() bef(1) bef(2) aft(5) aft(4) {
+        arr.push(3);
+    }
+
+    function check() public view returns (uint8[] memory) {
+        return arr;
+    }
+
+    // check would return [1,2,3,4,5]
+}
+
+contract V is S {
+    constructor() bef(6) aft(10) S() bef(7) aft(9) {
+        arr.push(8);
+    }
+
+    // check would return [1,2,3,4,5,6,7,8,9,10]
+}
