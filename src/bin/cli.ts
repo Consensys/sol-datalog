@@ -19,7 +19,8 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
-import { analyze, buildDatalog, getIssues } from "../lib";
+import { analyze, buildDatalog, detect } from "../lib";
+import { SouffleCSVInstance } from "../lib/souffle/instance";
 
 const pkg = require("../../package.json");
 
@@ -291,15 +292,16 @@ async function main() {
     }
 
     if (options.runDetectors) {
-        const output = await analyze(units, "");
-        console.log(getIssues(output, reader.context));
+        const issues = detect(units, reader.context);
+        console.log(issues);
 
         return;
     }
 
     if (options.dumpAnalyses) {
-        const outputDL = options.dumpAnalyses.map((x: string) => `.output ${x}`).join("\n");
-        const output = await analyze(units, outputDL);
+        const instance = (await analyze(units, "csv", options.dumpAnalyses)) as SouffleCSVInstance;
+        const output = instance.results();
+        instance.release();
 
         for (const analysis of options.dumpAnalyses) {
             console.log(analysis, output.get(analysis));

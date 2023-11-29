@@ -34,5 +34,3 @@ msgSenderInconsistency_Detector(c1, f1, e1, c2, f2, e2) :-
     funHasMsgSenderBuiltin(f1, e1),
     funHasMsgSenderCall(f2, e2),
     f1Name != "_msgSender".
-    
-.output msgSenderInconsistency_Detector
