@@ -35,6 +35,8 @@ describe("Analyses", () => {
 
                 const analysisResults = await analyze(units, addtionalDL);
 
+                // console.log(JSON.stringify(Object.fromEntries(analysisResults.entries())));
+
                 for (const [key, val] of Object.entries(expectedOutput)) {
                     expect(analysisResults.get(key)).toEqual(val);
                 }
