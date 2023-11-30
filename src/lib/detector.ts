@@ -38,7 +38,7 @@ export function loadDetectors(): DetectorTemplate[] {
     return fileNames.map(loadDetectorTemplate);
 }
 
-function parseTemplateSignature(sig: string): ParsedSignature {
+export function parseTemplateSignature(sig: string): ParsedSignature {
     const nameRX = /^([^(]*)\(([^)]*)\)$/;
     const m = sig.match(nameRX);
 
