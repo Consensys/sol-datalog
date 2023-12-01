@@ -35,6 +35,7 @@ export abstract class SouffleInstance {
 
     async run(outputRelations: string[]): Promise<void> {
         const sysTmpDir = os.tmpdir();
+
         this.tmpDir = await fse.mkdtempSync(join(sysTmpDir, "sol-datalog-"));
 
         this.inputFile = join(this.tmpDir, "input.dl");
@@ -71,6 +72,7 @@ export abstract class SouffleInstance {
 
     release(): void {
         fse.removeSync(this.inputFile);
+
         for (const f of this.outputFiles) {
             fse.removeSync(f);
         }
@@ -90,6 +92,7 @@ export class SouffleCSVInstance extends SouffleInstance {
 
     results(): OutputRelations {
         sol.assert(this.success, ``);
+
         return this.readProducedCsvFiles();
     }
 
@@ -138,6 +141,7 @@ export class SouffleSQLiteInstance extends SouffleInstance {
 
     async getRelation(name: string): Promise<Fact[]> {
         const r = this._relations.get(name);
+
         sol.assert(r !== undefined, `Uknown relation ${name}`);
 
         const rawRes = await this.db.all(`SELECT * from ${name}`);

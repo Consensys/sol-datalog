@@ -82,7 +82,7 @@ async function main() {
             "--download-compilers <compilerKind...>",
             `Download specified kind of supported compilers to compiler cache. Supports multiple entries.`
         )
-        .option("--run-detectors", "Run defined detecotrs")
+        .option("--run-detectors", "Run defined detectors")
         .option("--dump", "Dump generated DL")
         .option(
             "--dump-analyses <analysisName...>",

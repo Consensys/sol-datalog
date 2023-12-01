@@ -30,14 +30,16 @@ describe("Analyses", () => {
                 expectedOutput = fse.readJSONSync(json, { encoding: "utf-8" });
             });
 
-            it("Detectors produce expected results", async () => {
+            it("Analyses produce expected results", async () => {
                 const targetAnalyses = [...Object.keys(expectedOutput)];
                 const instance = (await analyze(
                     units,
                     "csv",
                     targetAnalyses
                 )) as SouffleCSVInstance;
+
                 const analysisResults = instance.results();
+
                 instance.release();
 
                 // console.log(JSON.stringify(Object.fromEntries(analysisResults.entries())));
@@ -57,10 +59,8 @@ describe("Analyses work in sqlite mode", () => {
     describe(sample, () => {
         let units: sol.SourceUnit[];
         let expectedOutput: OutputRelations;
-        let reader: sol.ASTReader;
 
         before(async () => {
-            reader = new sol.ASTReader();
             const result = await sol.compileSol(sample, "auto");
 
             const data = result.data;
@@ -68,7 +68,7 @@ describe("Analyses work in sqlite mode", () => {
 
             expect(errors).toHaveLength(0);
 
-            units = reader.read(data);
+            units = new sol.ASTReader().read(data);
 
             expect(units.length).toBeGreaterThanOrEqual(1);
 
@@ -77,7 +77,7 @@ describe("Analyses work in sqlite mode", () => {
             }) as OutputRelations;
         });
 
-        it("Detectors produce expected results", async () => {
+        it("Analyses produce expected results", async () => {
             const targetAnalyses = [...Object.keys(expectedOutput)];
             const instance = (await analyze(
                 units,
@@ -87,6 +87,7 @@ describe("Analyses work in sqlite mode", () => {
 
             for (const [key, val] of Object.entries(expectedOutput)) {
                 const actualResutls = (await instance.getRelation(key)).map((f) => f.fields);
+
                 expect(actualResutls).toEqual(val);
             }
 
