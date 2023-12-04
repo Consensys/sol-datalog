@@ -4,69 +4,69 @@
 // ForStatement
 // Initialization stmt comes before body
 dominateStmt(pred, succ) :-
-    ForStatement(_, _, succ, pred, 1, _, _, _, _).
+    ForStatement(_, succ, pred, 1, _, _, _, _).
 
 // All stmts dominating the for dominate the init statement
 dominateStmt(pred, succ) :-
-    ForStatement(fId, _, _, succ, 1, _, _, _, _),
+    ForStatement(fId, _, succ, 1, _, _, _, _),
     dominateStmt(pred, fId).
 
 // No init statement - all stmts dominating the for dominate the body
 dominateStmt(pred, succ) :-
-    ForStatement(fId, _, succ, _, 0, _, _, _, _),
+    ForStatement(fId, succ, _, 0, _, _, _, _),
     dominateStmt(pred, fId).
 
 // TryStatement
 dominateStmt(pred, succ) :-
-    TryStatement(tId, _, _),
+    TryStatement(tId, _),
     dominateStmt(pred, tId),
     TryStatement_vClauses(tId, cId, _),
-    TryCatchClause(cId, _, _, succ, _, _).
+    TryCatchClause(cId, _, succ, _, _).
 
 // BlockStatement
 dominateStmt(pred, succ) :-
-    Block(bId, _),
+    Block(bId),
     dominateStmt(pred, bId),
     Block_vStatements(bId, succ, 0).
 
 dominateStmt(pred, succ) :-
-    Block(bId, _),
+    Block(bId),
     Block_vStatements(bId, pred, i),
     Block_vStatements(bId, succ, i + 1).
 
 // UncheckedBlockStatement
 dominateStmt(pred, succ) :-
-    UncheckedBlock(bId, _),
+    UncheckedBlock(bId),
     dominateStmt(pred, bId),
     UncheckedBlock_vStatements(bId, succ, 0).
 
 dominateStmt(pred, succ) :-
-    UncheckedBlock(bId, _),
+    UncheckedBlock(bId),
     UncheckedBlock_vStatements(bId, pred, i),
     UncheckedBlock_vStatements(bId, succ, i + 1).
 
 // WhileStatement
 dominateStmt(pred, succ) :-
-    WhileStatement(wId, _, _, succ),
+    WhileStatement(wId, _, succ),
     dominateStmt(pred, wId).
 
 // IfStatement
 dominateStmt(pred, succ) :-
-    IfStatement(ifId, _, _, succ, _, _),
+    IfStatement(ifId, _, succ, _, _),
     dominateStmt(pred, ifId).
 
 dominateStmt(pred, succ) :-
-    IfStatement(ifId, _, _, _, succ, 1),
+    IfStatement(ifId, _, _, succ, 1),
     dominateStmt(pred, ifId).
 
 // DoWhile statement
 dominateStmt(pred, succ) :-
-    DoWhileStatement(dwId, _, _, succ),
+    DoWhileStatement(dwId, _, succ),
     dominateStmt(pred, dwId).
 
 // ModifierInvocations
 dominateStmt(pred, succ) :-
-    FunctionDefinition(id, _, _, _, _, _, _, _, _, _, _, _, _, _, _),
+    FunctionDefinition(id, _, _, _, _, _, _, _, _, _, _, _, _, _),
     FunctionDefinition_vModifiers(id, pred, i),
     modifierInvocation_isModifier(pred),
     FunctionDefinition_vModifiers(id, succ, i + 1),
@@ -74,7 +74,7 @@ dominateStmt(pred, succ) :-
 
 // ModifierInvocations
 dominateStmt(pred, succ) :-
-    FunctionDefinition(id, _, _, _, _, _, _, _, _, _, _, _, _, succ, 1),
+    FunctionDefinition(id, _, _, _, _, _, _, _, _, _, _, _, succ, 1),
     FunctionDefinition_vModifiers(id, pred, i),
     modifierInvocation_isModifier(pred).
 

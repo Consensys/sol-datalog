@@ -3,19 +3,19 @@
 
 // Simple reference to the variable
 stateVarModifiedInLHS(varId, exprId) :-
-    Identifier(exprId, _, _, _, varId).
+    Identifier(exprId, _, _, varId).
 // A member access referring to the variable (e.g. this.x, Foo.x)
 stateVarModifiedInLHS(varId, exprId) :-
-    MemberAccess(exprId, _, _, _, _, varId).
+    MemberAccess(exprId, _, _, _, varId).
 // A struct member access x.foo
 stateVarModifiedInLHS(varId, exprId) :-
-    MemberAccess(exprId, _, _, subExprId, _, _), stateVarModifiedInLHS(varId, subExprId). // A str
+    MemberAccess(exprId, _, subExprId, _, _), stateVarModifiedInLHS(varId, subExprId). // A str
 // An index into the state var x[a]
 stateVarModifiedInLHS(varId, exprId) :-
-    IndexAccess(exprId, _, _, baseExprId, _, _), stateVarModifiedInLHS(varId, baseExprId).
+    IndexAccess(exprId, _, baseExprId, _, _), stateVarModifiedInLHS(varId, baseExprId).
 // An tuple expression
 stateVarModifiedInLHS(varId, exprId) :-
-    TupleExpression(exprId, _, _, 0), 
+    TupleExpression(exprId, _, 0), 
     TupleExpression_components(exprId, componentId, _),
     componentId >= 0,
     stateVarModifiedInLHS(varId, componentId).
@@ -25,7 +25,7 @@ stateVarModifiedInLHS(varId, exprId) :-
 
 // Simple assignment case
 varModifiedInLHSOfAssignment(varId, assignmentId) :-
-    Assignment(assignmentId, _, _, _, lhsId, _),
+    Assignment(assignmentId, _, _, lhsId, _),
     stateVarModifiedInLHS(varId, lhsId).
 
 // Compute whether the state var "varContractName.stateVarName" is changed  inside the method "funContractName.funName"
@@ -38,6 +38,6 @@ stateVarAssignedIn(varContractName, stateVarName, funContractName, funName) :-
     ancestor(varContractId, sId),
     function(funName, fId),
     ancestor(funContractId, fId),
-    Assignment(assignId, _, _, _, _, _),
+    Assignment(assignId, _, _, _, _),
     ancestor(fId, assignId),
     varModifiedInLHSOfAssignment(sId, assignId).
