@@ -61,10 +61,7 @@ describe("Integration test on samples", () => {
 
                 for (const unit of units) {
                     unit.walk((node) => {
-                        const rx = new RegExp(
-                            `${node.type}\\(${node.id}, "${node.src}".*\\)`,
-                            "gm"
-                        );
+                        const rx = new RegExp(`${node.type}\\(${node.id}.*\\)`, "gm");
 
                         if (!rx.test(datalog)) {
                             missing.add(node);
@@ -73,6 +70,22 @@ describe("Integration test on samples", () => {
                 }
 
                 sol.assert(missing.size === 0, `Missing nodes {0}`, missing);
+            });
+
+            it("each AST node has a src fact", () => {
+                const missing = new Set<sol.ASTNode>();
+
+                for (const unit of units) {
+                    unit.walk((node) => {
+                        const rx = new RegExp(`src\\(${node.id}, "${node.src}"\\)`, "gm");
+
+                        if (!rx.test(datalog)) {
+                            missing.add(node);
+                        }
+                    });
+                }
+
+                sol.assert(missing.size === 0, `Missing srcs for nodes {0}`, missing);
             });
 
             it("souffle is able to process the output", () => {

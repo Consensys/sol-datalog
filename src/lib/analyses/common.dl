@@ -6,26 +6,26 @@ ancestor(x, y) :- parent(x, z), ancestor(z, y).
 
 // Helper to get the name of a state var with a given id
 .decl stateVar(name: symbol, id: id)
-stateVar(name, id) :- VariableDeclaration(id, _, _, _, name, _, 1, _, _, _, _, _, _, _, _, _, _).
+stateVar(name, id) :- VariableDeclaration(id, _, _, name, _, 1, _, _, _, _, _, _, _, _, _, _).
 
 // Helper to get the name of a function with a given id
 .decl function(name: symbol, id: id)
-function(name, id) :- FunctionDefinition(id, _, _, _, name, _, _, _, _, _, _, _, _, _, _).
+function(name, id) :- FunctionDefinition(id, _, _, name, _, _, _, _, _, _, _, _, _, _).
 
 // Helper to get the name of a function with a given id in a given contract (contractId)
 .decl functionIn(name: symbol, id: FunctionDefinitionId, contractId: id)
-functionIn(name, id, contractId) :- FunctionDefinition(id, _, contractId, _, name, _, _, _, _, _, _, _, _, _, _).
+functionIn(name, id, contractId) :- FunctionDefinition(id, contractId, _, name, _, _, _, _, _, _, _, _, _, _).
 
 // Helper to get the name of a contract with a given id
 .decl contract(name: symbol, id: id)
-contract(name, id) :- ContractDefinition(id, _, name, _, _, _, _).
+contract(name, id) :- ContractDefinition(id, name, _, _, _, _).
 
 /// Specifies that a childContractId inherits from baseContractId (or is the same contract)
 .decl inherits(childContractId: ContractDefinitionId, baseContractId: ContractDefinitionId)
-inherits(childContractId, baseContractId) :- ContractDefinition(childContractId, _, _, _, _, _, _), childContractId = baseContractId.
+inherits(childContractId, baseContractId) :- ContractDefinition(childContractId, _, _, _, _, _), childContractId = baseContractId.
 inherits(childContractId, baseContractId) :-
-    ContractDefinition(childContractId, _, _, _, _, _, _),
-    ContractDefinition(baseContractId, _, _, _, _, _, _),
+    ContractDefinition(childContractId, _, _, _, _, _),
+    ContractDefinition(baseContractId, _, _, _, _, _),
     ContractDefinition_linearizedBaseContracts(childContractId, baseContractId, _).
 
 /// Specifies that a method with `methodId` belongs to contract `contractId` or one of its bases.
@@ -34,11 +34,11 @@ method(contractId, methodId) :- inherits(contractId, baseId), functionIn(_ ,meth
 
 .decl ModifierInvocation_vReferencedDeclaration(mId: id, rId: id)
 ModifierInvocation_vReferencedDeclaration(mId, rId) :-
-    ModifierInvocation(mId, _, mNameId, _, _),
-    (Identifier(mNameId, _, _, _, rId); IdentifierPath(mNameId, _, _, rId)).
+    ModifierInvocation(mId, mNameId, _, _),
+    (Identifier(mNameId, _, _, rId); IdentifierPath(mNameId, _, rId)).
 
 .decl modifierInvocation_isModifier(mid: id)
 modifierInvocation_isModifier(mId) :-
-    ModifierInvocation(mId, _, _, _, _),
+    ModifierInvocation(mId, _, _, _),
     ModifierInvocation_vReferencedDeclaration(mId, rId),
-    ModifierDefinition(rId, _, _, _, _, _, _, _, _, _).
+    ModifierDefinition(rId, _, _, _, _, _, _, _, _).

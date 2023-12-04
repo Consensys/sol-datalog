@@ -101,6 +101,7 @@ const staticPreamble = `
 .type SubdenominationT <: symbol
 
 .decl parent(parentId: id, childId: id)
+.decl src(id: id, src: symbol)
 .decl Expression(id: id)
 .decl Statement(id: id)
 .decl StatementWithChildren(id: id)
@@ -131,7 +132,7 @@ const staticPreamble = `
 .decl FunctionCallOptions_vOptionsMap(parentId: FunctionCallOptionsId, name: symbol, id: id)
 `;
 
-const skipFields = ["raw", "documentation", "nameLocation", "children"];
+const skipFields = ["raw", "documentation", "nameLocation", "children", "src"];
 const skipClassFieldsM = new Map([
     ["ContractDefinition", ["linearizedBaseContracts", "usedErrors", "usedEvents"]],
     ["TupleExpression", ["components"]],
@@ -254,7 +255,7 @@ const arrayFieldsToBaseTypesM = new Map([
  */
 function buildNodeDecls(name, constructor, baseName) {
     const rawParams = constructor.getParameters();
-    const params = rawParams.map((p) => [p.getName(), p.isOptional(), p.getType().getText()]);
+    let params = rawParams.map((p) => [p.getName(), p.isOptional(), p.getType().getText()]);
 
     assert(
         params.length >= 2 && params[0][0] === "id" && params[1][0] === "src",
@@ -344,17 +345,14 @@ function buildNodeDecls(name, constructor, baseName) {
 
     if (idBaseType !== "id") {
         res.push(
-            `${idBaseType.slice(0, -2)}(id) :- ${name}(id, ${repeat(
-                "_",
-                dynamicArgs.length + 1
-            ).join(", ")}).`
+            `${idBaseType.slice(0, -2)}(id) :- ${name}(id${
+                dynamicArgs.length > 0 ? ", " + repeat("_", dynamicArgs.length).join(", ") : ""
+            }).`
         );
     }
 
     res.push(
-        `.decl ${name}(id: ${name}Id, src: symbol${
-            dynamicArgs.length > 0 ? ", " + dynamicArgs.join(", ") : ""
-        })`
+        `.decl ${name}(id: ${name}Id${dynamicArgs.length > 0 ? ", " + dynamicArgs.join(", ") : ""})`
     );
 
     return res;
@@ -717,6 +715,9 @@ function buildFactInvocation(name, constructor) {
 
     let res = ``;
 
+    // Add src relation
+    res += `res.push(\`src(\${nd.id}, "\${nd.src}").\`);`;
+
     // Add relations for map arguments
     for (let [paramName, optional] of params.slice(2)) {
         const args = [`\${nd.id}`];
@@ -794,7 +795,7 @@ function buildFactInvocation(name, constructor) {
     }
 
     // Build arguments to main relation for the node
-    let dynamicArgs = ["nd.id", "nd.src"];
+    let dynamicArgs = ["nd.id"];
 
     for (let [paramName, optional, type] of params.slice(2)) {
         if (shouldSkipField(name, paramName)) {
