@@ -83,6 +83,10 @@ export abstract class SouffleInstance {
     relations(): Iterable<Relation> {
         return this._relations.values();
     }
+
+    relation(name: string): Relation | undefined {
+        return this._relations.get(name);
+    }
 }
 
 export class SouffleCSVInstance extends SouffleInstance {
@@ -139,6 +143,7 @@ export class SouffleSQLiteInstance extends SouffleInstance {
         });
     }
 
+    /// @todo rename to something more descriptive
     async getRelation(name: string): Promise<Fact[]> {
         const r = this._relations.get(name);
 
@@ -147,5 +152,9 @@ export class SouffleSQLiteInstance extends SouffleInstance {
         const rawRes = await this.db.all(`SELECT * from ${name}`);
 
         return Fact.fromSQLRows(r, rawRes);
+    }
+
+    async getSQL(sql: string): Promise<any[]> {
+        return await this.db.all(sql);
     }
 }

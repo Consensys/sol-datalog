@@ -6,14 +6,14 @@
 // Computes all function with id funId that have `msg.sender` expression with id eId
 .decl funHasMsgSenderBuiltin(funId: id, eId: id)
 funHasMsgSenderBuiltin(funId, eId) :-
-    MemberAccess(eId, _, _, baseId, "sender", _),
-    Identifier(baseId, _, _, "msg", _),
+    MemberAccess(eId, _, baseId, "sender", _),
+    Identifier(baseId, _, "msg", _),
     ancestor(funId, eId).
 
 // Computes all function with id funId that have `_msgSender` expression with id eId
 .decl funHasMsgSenderCall(funId: id, eId: id)
 funHasMsgSenderCall(funId, eId) :-
-    Identifier(eId, _, _, "_msgSender", _),
+    Identifier(eId, _, "_msgSender", _),
     ancestor(funId, eId).
 
 /// MAIN DETECTOR RELATION
