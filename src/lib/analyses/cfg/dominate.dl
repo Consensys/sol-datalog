@@ -4,12 +4,11 @@
 dominate(pred, succ) :-
     dominateStmt(pred, succ).
 
-/// If statement A dominates statement B, then all ExpressionStatement in
-/// statement A dominate all expressions in statement B
+/// If statement A dominates statement B, A dominates all expressions in B
 dominate(pred, succ) :-
-    dominateStmt(A, B),
-    ancestor(A, pred),
-    Expression(pred),
+    Statement(pred),
+    dominateStmt(pred, B),
+    Statement(B),
     ancestor(B, succ),
     Expression(succ).
 
@@ -64,3 +63,6 @@ dominate(pred, succ) :-
     TupleExpression(tId, _, _),
     TupleExpression_components(tId, pred, i),
     TupleExpression_components(tId, succ, i + 1).
+
+/// Domination is transitive
+dominate(pred, succ) :- dominate(pred, x), dominate(x, succ).
