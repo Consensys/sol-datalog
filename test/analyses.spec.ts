@@ -4,8 +4,13 @@ import * as sol from "solc-typed-ast";
 import { OutputRelations, analyze } from "../src";
 import { searchRecursive } from "../src/lib/utils";
 import { SouffleCSVInstance, SouffleSQLiteInstance } from "../src/lib/souffle/instance";
+import { Fact } from "../src/lib/souffle/fact";
+import { join } from "path";
 
 const samples = searchRecursive("test/samples/analyses", (fileName) => fileName.endsWith(".json"));
+
+const MY_DIR = __dirname;
+const DIST_SO_DIR = join(MY_DIR, "../dist/functors");
 
 describe("Analyses", () => {
     for (const json of samples) {
@@ -39,13 +44,16 @@ describe("Analyses", () => {
                 const instance = (await analyze(
                     units,
                     "csv",
-                    targetAnalyses
+                    targetAnalyses,
+                    DIST_SO_DIR
                 )) as SouffleCSVInstance;
                 const analysisResults = instance.results();
                 instance.release();
 
                 for (const [key, val] of Object.entries(expectedOutput)) {
-                    expect(analysisResults.get(key)).toEqual(val);
+                    expect(
+                        (analysisResults.get(key) as Fact[]).map((fact) => fact.toJSON())
+                    ).toEqual(val);
                 }
             });
         });

@@ -5,3 +5,6 @@ tmp/
 .env
 src/gen/translate.ts
 src/gen/declarations.ts
+src/lib/souffle/value_parser.ts
+functors/functors.o
+functors/libfunctors.so

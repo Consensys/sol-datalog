@@ -25,5 +25,6 @@
         "resolveJsonModule": true
     },
 
-    "include": ["src/**/*"]
+    "include": ["src/**/*"],
+    "exclude": ["src/lib/query/parser/query_header.ts"]
 }

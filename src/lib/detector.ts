@@ -3,10 +3,11 @@ import * as sol from "solc-typed-ast";
 import { searchRecursive } from "./utils";
 import { OutputRelations } from "./souffle";
 import { DETECTORS_DIR } from "./detectors";
+import { Fact, FieldVal } from "./souffle/fact";
 
 type SignatureArgs = Array<[string, string]>;
 type ParsedSignature = [string, SignatureArgs];
-type SubstMap = Map<string, number | string | bigint>;
+type SubstMap = Map<string, FieldVal>;
 
 interface DetectorTemplate {
     fileName: string;
@@ -53,30 +54,19 @@ export function parseTemplateSignature(sig: string): ParsedSignature {
     return [name, args];
 }
 
-function makeSubst(formals: SignatureArgs, relnVals: string[]): SubstMap {
+function makeSubst(formals: SignatureArgs, fact: Fact): SubstMap {
     const res = new Map();
 
     sol.assert(
-        formals.length === relnVals.length,
+        formals.length === fact.fields.length,
         `Mismatch in number of formals {0} and number of vals {1}`,
         formals.length,
-        relnVals.length
+        fact.fields.length
     );
 
     for (let i = 0; i < formals.length; i++) {
-        const [name, type] = formals[i];
-
-        let val;
-
-        if (type === "id" || type.endsWith("Id")) {
-            val = Number.parseInt(relnVals[i]);
-        } else if (type === "number") {
-            val = BigInt(relnVals[i]);
-        } else {
-            val = relnVals[i];
-        }
-
-        res.set(name, val);
+        const [name] = formals[i];
+        res.set(name, fact.fields[i]);
     }
 
     return res;
@@ -134,7 +124,12 @@ function fmt(template: string, subst: SubstMap, ctx: sol.ASTContext): string {
 
             const id = subst.get(argName);
 
-            sol.assert(typeof id === "number", `Expected {0} to be a number, not {1}`, argName, id);
+            sol.assert(
+                typeof id === "number",
+                `Expected {0} to be a number, not {1}`,
+                argName,
+                id as unknown as any
+            );
 
             const node = ctx.locate(id);
             const fieldVal = getField(node, field);
@@ -150,6 +145,7 @@ function fmt(template: string, subst: SubstMap, ctx: sol.ASTContext): string {
 
             sol.assert(val !== undefined, `Unknown field {0}`, argName);
 
+            sol.assert(!(typeof val === "object"), ``);
             template = template.replace(fmtHoleRx, sol.pp(val));
             continue;
         }

@@ -6,8 +6,9 @@ import { ANALYSES_DIR } from "../analyses";
 import { DETECTORS_DIR } from "../detectors";
 import { SouffleCSVInstance, SouffleOutputType, SouffleSQLiteInstance } from "./instance";
 import { Issue, getIssues, loadDetectors, parseTemplateSignature } from "../detector";
+import { Fact } from "./fact";
 
-export type OutputRelations = Map<string, string[][]>;
+export type OutputRelations = Map<string, Fact[]>;
 
 function getDLFromFolder(folder: string): string {
     const fileNames = searchRecursive(folder, (f) => f.endsWith(".dl"));
@@ -46,12 +47,15 @@ export function buildDatalog(units: sol.SourceUnit[]): string {
 export async function analyze(
     units: sol.SourceUnit[],
     mode: SouffleOutputType,
-    outputRelations: string[]
+    outputRelations: string[],
+    soDir?: string
 ): Promise<SouffleCSVInstance | SouffleSQLiteInstance> {
     const datalog = buildDatalog(units);
 
     const instance =
-        mode === "csv" ? new SouffleCSVInstance(datalog) : new SouffleSQLiteInstance(datalog);
+        mode === "csv"
+            ? new SouffleCSVInstance(datalog, soDir)
+            : new SouffleSQLiteInstance(datalog, soDir);
 
     await instance.run(outputRelations);
     return instance;
