@@ -1,13 +1,19 @@
 import * as sol from "solc-typed-ast";
 import { Relation } from "./relation";
-import { DatalogRecordType, DatalogSubtype, DatalogType, number, symbol } from "./types";
+import {
+    DatalogRecordType,
+    DatalogSubtype,
+    DatalogType,
+    DatalogNumber,
+    DatalogSymbol
+} from "./types";
 import { ParsedFieldVal, parseValue } from "./value_parser";
 import { zip } from "../utils";
 
 export type FieldVal = string | number | bigint | { [field: string]: FieldVal } | null;
 
 function fieldValToJSON(val: FieldVal, typ: DatalogType): any {
-    if (typ === symbol || typ == number) {
+    if (typ === DatalogSymbol || typ == DatalogNumber) {
         return val;
     }
 
@@ -20,7 +26,7 @@ function fieldValToJSON(val: FieldVal, typ: DatalogType): any {
             return null;
         }
 
-        sol.assert(val instanceof Object, `Expected an object in ppFieldVal`);
+        sol.assert(val instanceof Object, `Expected an object in fieldValToJSON`);
         return typ.fields.map(([name, fieldT]) => fieldValToJSON(val[name], fieldT));
     }
 
@@ -28,11 +34,11 @@ function fieldValToJSON(val: FieldVal, typ: DatalogType): any {
 }
 
 function ppFieldVal(val: FieldVal, typ: DatalogType): string {
-    if (typ === symbol) {
+    if (typ === DatalogSymbol) {
         return val as string;
     }
 
-    if (typ === number) {
+    if (typ === DatalogNumber) {
         return `${val as number | bigint}`;
     }
 
@@ -53,7 +59,7 @@ function ppFieldVal(val: FieldVal, typ: DatalogType): string {
 }
 
 function translateVal(raw: ParsedFieldVal, typ: DatalogType): FieldVal {
-    if (typ === number) {
+    if (typ === DatalogNumber) {
         sol.assert(
             typeof raw === "number",
             `Expected a number when translating a number, not {0}`,
@@ -62,7 +68,7 @@ function translateVal(raw: ParsedFieldVal, typ: DatalogType): FieldVal {
         return raw;
     }
 
-    if (typ === symbol) {
+    if (typ === DatalogSymbol) {
         sol.assert(typeof raw === "string", `Expected a string when translating a symbol`);
         return raw;
     }
@@ -90,12 +96,12 @@ function translateVal(raw: ParsedFieldVal, typ: DatalogType): FieldVal {
 }
 
 function parseFieldValFromCsv(val: string, typ: DatalogType): FieldVal {
-    if (typ === number) {
+    if (typ === DatalogNumber) {
         sol.assert(typeof val === "number", `Expected a number`);
         return val;
     }
 
-    if (typ === symbol) {
+    if (typ === DatalogSymbol) {
         sol.assert(typeof val === "string", `Expected a string`);
         return val;
     }

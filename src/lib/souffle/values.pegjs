@@ -32,8 +32,17 @@ DecNumber =
     DecDigit+ {
         return Number(text());
     }
+    
+MaybeNegNumber
+    = sign: "-"? __ num: DecNumber {
+        if (sign === null) {
+            return num;
+        }
 
-Number = DecNumber
+        return -num;
+    }    
+
+Number = MaybeNegNumber
 
 DBLQUOTE="\""
 LBRACE="["

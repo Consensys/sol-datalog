@@ -6,19 +6,19 @@ export abstract class DatalogType {
 }
 class DatalogPrimitiveType extends DatalogType {}
 
-export const number = new DatalogPrimitiveType("number");
-export const symbol = new DatalogPrimitiveType("symbol");
+export const DatalogNumber = new DatalogPrimitiveType("number");
+export const DatalogSymbol = new DatalogPrimitiveType("symbol");
 
 const subtypeDeclRx = /.type *([a-zA-Z0-9_]*) *<: *([a-zA-Z0-9_]*)/g;
 const recordTypeDeclRx = /.type *([a-zA-Z0-9_]*) *= *\[([^\]]*)\]/g;
 
 export function lookupType(name: string, env: TypeEnv): DatalogType | undefined {
     if (name === "number") {
-        return number;
+        return DatalogNumber;
     }
 
     if (name === "symbol") {
-        return symbol;
+        return DatalogSymbol;
     }
 
     return env.get(name);
