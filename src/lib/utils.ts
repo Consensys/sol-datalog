@@ -11,6 +11,16 @@ export function flatten<T>(arg: T[][]): T[] {
     return res;
 }
 
+export function zip<T1, T2>(x: T1[], y: T2[]): Array<[T1, T2]> {
+    const res: Array<[T1, T2]> = [];
+
+    for (let i = 0; i < x.length; i++) {
+        res.push([x[i], y[i]]);
+    }
+
+    return res;
+}
+
 /**
  * Convert a TS list into a datalog "recursive" list.
  */
