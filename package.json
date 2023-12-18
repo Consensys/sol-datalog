@@ -1,6 +1,6 @@
 {
     "name": "@consensys/sol-datalog",
-    "version": "0.0.0",
+    "version": "0.1.0",
     "description": "Translator from Solidity AST to Datalog for later use with Souffle",
     "files": [
         "dist"
