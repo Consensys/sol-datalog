@@ -20,6 +20,7 @@ describe("Analyses", () => {
             let units: sol.SourceUnit[];
             let expectedOutput: OutputRelations;
             let reader: sol.ASTReader;
+            let version: string;
 
             before(async () => {
                 reader = new sol.ASTReader();
@@ -29,6 +30,7 @@ describe("Analyses", () => {
                 const errors = sol.detectCompileErrors(data);
 
                 expect(errors).toHaveLength(0);
+                version = result.compilerVersion as string;
 
                 units = reader.read(data);
 
@@ -41,8 +43,10 @@ describe("Analyses", () => {
 
             it("Detectors produce expected results", async () => {
                 const targetAnalyses = [...Object.keys(expectedOutput)];
+                const infer = new sol.InferType(version);
                 const instance = (await analyze(
                     units,
+                    infer,
                     "csv",
                     targetAnalyses,
                     DIST_SO_DIR
@@ -68,6 +72,7 @@ describe("Analyses work in sqlite mode", () => {
         let units: sol.SourceUnit[];
         let expectedOutput: OutputRelations;
         let reader: sol.ASTReader;
+        let version: string;
 
         before(async () => {
             reader = new sol.ASTReader();
@@ -78,6 +83,7 @@ describe("Analyses work in sqlite mode", () => {
 
             expect(errors).toHaveLength(0);
 
+            version = result.compilerVersion as string;
             units = reader.read(data);
 
             expect(units.length).toBeGreaterThanOrEqual(1);
@@ -89,8 +95,10 @@ describe("Analyses work in sqlite mode", () => {
 
         it("Detectors produce expected results", async () => {
             const targetAnalyses = [...Object.keys(expectedOutput)];
+            const infer = new sol.InferType(version);
             const instance = (await analyze(
                 units,
+                infer,
                 "sqlite",
                 targetAnalyses
             )) as SouffleSQLiteInstance;
