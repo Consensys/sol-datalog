@@ -44,7 +44,9 @@ describe("Integration test on samples", () => {
 
                 expect(units.length).toBeGreaterThanOrEqual(1);
 
-                datalog = `// ${sample}\n` + datalogFromUnits(units);
+                const infer = new sol.InferType(result.compilerVersion as string);
+
+                datalog = `// ${sample}\n` + datalogFromUnits(units, infer);
             });
 
             after(() => {

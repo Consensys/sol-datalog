@@ -102,6 +102,10 @@ const staticPreamble = `
 
 .decl parent(parentId: id, childId: id)
 .decl src(id: id, src: symbol)
+.decl Node(id: id)
+.decl ExternalCall(id: FunctionCallId)
+.decl ConstantExpression(id: id)
+.decl CompilerVersion(major: number, minor: number, patch: number)
 .decl Expression(id: id)
 .decl Statement(id: id)
 .decl StatementWithChildren(id: id)
@@ -350,6 +354,13 @@ function buildNodeDecls(name, constructor, baseName) {
             }).`
         );
     }
+
+    // Note that this is a node type
+    res.push(
+        `Node(id) :- ${name}(id${
+            dynamicArgs.length > 0 ? ", " + repeat("_", dynamicArgs.length).join(", ") : ""
+        }).`
+    );
 
     res.push(
         `.decl ${name}(id: ${name}Id${dynamicArgs.length > 0 ? ", " + dynamicArgs.join(", ") : ""})`
@@ -704,7 +715,7 @@ function isTsTKnownArray(name, paramName, tsT) {
     return false;
 }
 
-function buildFactInvocation(name, constructor) {
+function buildFactInvocation(name, constructor, baseName) {
     const rawParams = constructor.getParameters();
     const params = rawParams.map((p) => [p.getName(), p.isOptional(), p.getType().getText()]);
 
@@ -839,6 +850,20 @@ function buildFactInvocation(name, constructor) {
         }
     }
 
+    if (name === "FunctionCall") {
+        res += `if (infer.isFunctionCallExternal(nd)) {
+            res.push(\`ExternalCall(\${nd.id}).\`);
+        }
+`;
+    }
+
+    if (baseName === "Expression" || baseName === "PrimaryExpression") {
+        res += `if (sol.isConstant(nd)) {
+            res.push(\`ConstantExpression(\${nd.id}).\`);
+        }
+`;
+    }
+
     res += `args = translateVals(${dynamicArgs.join(", ")});`;
 
     return res;
@@ -848,9 +873,10 @@ function buildFactBuilderFun(classDescs) {
     let body = "";
 
     for (let i = 0; i < classDescs.length; i++) {
-        const [name, , constructor] = classDescs[i];
+        const [name, classDecl, constructor] = classDescs[i];
+        const bases = classDecl.getHeritage().filter((n) => astClassNames.has(n.getName()));
 
-        const ifBody = buildFactInvocation(name, constructor);
+        const ifBody = buildFactInvocation(name, constructor, bases[0].getName());
 
         if (body !== "") {
             body += " else ";
@@ -864,7 +890,7 @@ function buildFactBuilderFun(classDescs) {
     body += ` else {\n    throw new Error(\`Unknown AST node type \${nd.constructor.name}.\`);\n}`;
 
     return `
-export function translateASTNodeInternal(nd: sol.ASTNode): string[] {
+export function translateASTNodeInternal(nd: sol.ASTNode, infer: sol.InferType): string[] {
     let args: string[];
     let res: string[] = [];
     ${body}

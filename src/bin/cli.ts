@@ -9,6 +9,7 @@ import {
     CompileResult,
     CompilerKind,
     CompilerVersions,
+    InferType,
     LatestCompilerVersion,
     PathOptions,
     PossibleCompilerKinds,
@@ -283,8 +284,9 @@ async function main() {
 
     const reader = new ASTReader();
     const units = reader.read(result.data);
+    const infer = new InferType(compilerVersion);
 
-    const datalog = buildDatalog(units);
+    const datalog = buildDatalog(units, infer);
 
     if (options.dump) {
         console.log(datalog);
@@ -292,14 +294,19 @@ async function main() {
     }
 
     if (options.runDetectors) {
-        const issues = await detect(units, reader.context);
+        const issues = await detect(units, reader.context, infer);
         console.log(issues);
 
         return;
     }
 
     if (options.dumpAnalyses) {
-        const instance = (await analyze(units, "csv", options.dumpAnalyses)) as SouffleCSVInstance;
+        const instance = (await analyze(
+            units,
+            infer,
+            "csv",
+            options.dumpAnalyses
+        )) as SouffleCSVInstance;
         const output = instance.results();
         instance.release();
 
