@@ -6,18 +6,19 @@ export abstract class DatalogType {
 }
 class DatalogPrimitiveType extends DatalogType {}
 
-export const number = new DatalogPrimitiveType("number");
-export const symbol = new DatalogPrimitiveType("symbol");
+export const DatalogNumber = new DatalogPrimitiveType("number");
+export const DatalogSymbol = new DatalogPrimitiveType("symbol");
 
-const subtypeDeclRx = /.type *([a-zA-Z0-9_]*) * <: *([a-zA-Z0-9_]*)/g;
+const subtypeDeclRx = /.type *([a-zA-Z0-9_]*) *<: *([a-zA-Z0-9_]*)/g;
+const recordTypeDeclRx = /.type *([a-zA-Z0-9_]*) *= *\[([^\]]*)\]/g;
 
 export function lookupType(name: string, env: TypeEnv): DatalogType | undefined {
     if (name === "number") {
-        return number;
+        return DatalogNumber;
     }
 
     if (name === "symbol") {
-        return symbol;
+        return DatalogSymbol;
     }
 
     return env.get(name);
@@ -41,6 +42,22 @@ export function buildTypeEnv(dl: string): TypeEnv {
         env.set(name, new DatalogSubtype(name, parentT));
     }
 
+    for (const m of dl.matchAll(recordTypeDeclRx)) {
+        const name = m[1];
+        const fields: Array<[string, string]> = m[2].split(",").map((x) =>
+            x
+                .trim()
+                .split(":")
+                .map((y) => y.trim())
+        ) as Array<[string, string]>;
+
+        const newT = new DatalogRecordType(name, []);
+        // First register as record types are recursive
+        env.set(name, newT);
+
+        newT.fields = fields.map(([name, typ]) => [name, lookupType(typ, env) as DatalogType]);
+    }
+
     return env;
 }
 
@@ -59,5 +76,14 @@ export class DatalogSubtype extends DatalogType {
         }
 
         return t;
+    }
+}
+
+export class DatalogRecordType extends DatalogType {
+    constructor(
+        name: string,
+        public fields: Array<[string, DatalogType]>
+    ) {
+        super(name);
     }
 }

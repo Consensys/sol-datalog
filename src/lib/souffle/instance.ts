@@ -14,6 +14,9 @@ import { Fact } from "./fact";
 
 export type SouffleOutputType = "csv" | "sqlite";
 
+const MY_DIR = __dirname;
+const DEFAULT_SO_DIR = join(MY_DIR, "../../functors");
+
 export abstract class SouffleInstance {
     protected tmpDir!: string;
     protected inputFile!: string;
@@ -22,15 +25,19 @@ export abstract class SouffleInstance {
 
     protected env: TypeEnv;
     protected _relations: Map<string, Relation>;
+    protected soDir: string;
 
     constructor(
         private readonly datalog: string,
-        private readonly outputRelationsMode: SouffleOutputType
+        private readonly outputRelationsMode: SouffleOutputType,
+        soDir?: string
     ) {
         this.success = false;
 
         this.env = buildTypeEnv(this.datalog);
         this._relations = new Map(getRelations(this.datalog, this.env).map((r) => [r.name, r]));
+
+        this.soDir = soDir ? soDir : DEFAULT_SO_DIR;
     }
 
     async run(outputRelations: string[]): Promise<void> {
@@ -57,9 +64,13 @@ export abstract class SouffleInstance {
             encoding: "utf-8"
         });
 
-        const result = spawnSync("souffle", ["--wno", "all", "-D", this.tmpDir, this.inputFile], {
-            encoding: "utf-8"
-        });
+        const result = spawnSync(
+            "souffle",
+            ["--wno", "all", `-L${this.soDir}`, "-D", this.tmpDir, this.inputFile],
+            {
+                encoding: "utf-8"
+            }
+        );
 
         if (result.status !== 0) {
             throw new Error(
@@ -90,8 +101,8 @@ export abstract class SouffleInstance {
 }
 
 export class SouffleCSVInstance extends SouffleInstance {
-    constructor(datalog: string) {
-        super(datalog, "csv");
+    constructor(datalog: string, soDir?: string) {
+        super(datalog, "csv", soDir);
     }
 
     results(): OutputRelations {
@@ -115,12 +126,15 @@ export class SouffleCSVInstance extends SouffleInstance {
         const outputFiles = searchRecursive(this.tmpDir, (x) => x.endsWith(".csv"));
 
         for (const fileName of outputFiles) {
-            const rel = basename(fileName, ".csv");
+            const relName = basename(fileName, ".csv");
+            const relation = this.relation(relName);
+
+            sol.assert(relation !== undefined, ``);
 
             const content = fse.readFileSync(fileName, { encoding: "utf-8" });
             const entries = this.parseCsv(content);
 
-            relMap.set(rel, entries);
+            relMap.set(relName, Fact.fromCSVRows(relation, entries));
         }
 
         return relMap;
@@ -130,8 +144,8 @@ export class SouffleCSVInstance extends SouffleInstance {
 export class SouffleSQLiteInstance extends SouffleInstance {
     private db!: Database;
 
-    constructor(datalog: string) {
-        super(datalog, "sqlite");
+    constructor(datalog: string, soDir?: string) {
+        super(datalog, "sqlite", soDir);
     }
 
     async run(outputRelations: string[]): Promise<void> {

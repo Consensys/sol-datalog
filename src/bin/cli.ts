@@ -307,7 +307,9 @@ async function main() {
         instance.release();
 
         for (const analysis of options.dumpAnalyses) {
-            console.log(analysis, output.get(analysis));
+            const facts = output.get(analysis);
+
+            console.log(analysis, facts ? facts.map((f) => f.toCSVRow()) : facts);
         }
 
         return;

@@ -1,0 +1,24 @@
+.decl callsDirectly(caller: FunctionDefinitionId, callee: FunctionDefinitionId)
+callsDirectly(caller, callee) :- 
+    FunctionDefinition(caller, _, _, _, _, _, _, _, _, _, _, _, _, _),
+    FunctionDefinition(callee, _, _, _, _, _, _, _, _, _, _, _, _, _),
+    FunctionCall(callId, _, _, exprId),
+    (Identifier(exprId, _, _, callee) ;
+     MemberAccess(exprId, _, _, _, callee)),
+    ancestor(caller, callId).
+
+.type CallPath = [ head: FunctionDefinitionId, tail: CallPath ]
+.functor isSubsequence(CallPath, CallPath):number stateful
+
+.decl callsPath(caller: FunctionDefinitionId, callee: FunctionDefinitionId, path: CallPath)
+
+// Base case - if caller has a function call that refers to callee
+callsPath(caller, callee, [caller, [callee, nil]]) :-
+    callsDirectly(caller, callee).
+
+// Calls is transitive
+callsPath(caller, callee, [caller, p]) :-
+    callsDirectly(caller, x),
+    callsPath(x, callee, p).
+
+callsPath(x, y, p1) <= callsPath(x, y, p2) :- @isSubsequence(p2, p1) = 1.
