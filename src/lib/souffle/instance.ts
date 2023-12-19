@@ -4,7 +4,7 @@ import os from "os";
 import { basename, join } from "path";
 import { OutputRelations } from "../souffle";
 import * as sol from "solc-typed-ast";
-import { searchRecursive } from "../utils";
+import { chunk, searchRecursive } from "../utils";
 import { parse } from "csv-parse/sync";
 import sqlite3 from "sqlite3";
 import { open, Database } from "sqlite";
@@ -69,7 +69,7 @@ export abstract class SouffleInstance {
 
         const outputDirectives = outputRelations.map((reln) =>
             this.outputRelationsMode === "csv"
-                ? `.output ${reln}`
+                ? `.output ${reln}(rfc4180=true)`
                 : `.output ${reln}(IO=sqlite, dbname="output.sqlite")`
         );
 
@@ -137,7 +137,7 @@ export class BaseSouffleCSVInstance extends SouffleInstance {
         return this._results;
     }
 
-    private parseCsv(content: string, delimiter = "\t"): string[][] {
+    private parseCsv(content: string, delimiter = ","): string[][] {
         const config = {
             skipEmptyLines: true,
             cast: true,
@@ -248,12 +248,19 @@ export class SouffleCSVToSQLInstance extends BaseSouffleCSVInstance implements S
             db.exec(`CREATE TABLE ${relnName} (${columns.join(", ")})`);
 
             // Next populate it with data
-            for (const row of rows) {
-                const values: string[] = row.fields.map((v, i) =>
-                    fieldValToSQLVal(v, relation.fields[i][1])
-                );
+            for (const rowGroup of chunk(rows, 200)) {
+                const valuesGroup: string[][] = [];
+                for (const row of rowGroup) {
+                    valuesGroup.push(
+                        row.fields.map((v, i) => fieldValToSQLVal(v, relation.fields[i][1]))
+                    );
+                }
 
-                db.exec(`INSERT INTO ${relnName} VALUES (${values.join(", ")})`);
+                const query = `INSERT INTO ${relnName} VALUES ${valuesGroup
+                    .map((values) => `(${values.join(", ")})`)
+                    .join(", ")}`;
+
+                db.exec(query);
             }
         }
     }

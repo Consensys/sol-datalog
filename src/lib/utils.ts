@@ -21,6 +21,26 @@ export function zip<T1, T2>(x: T1[], y: T2[]): Array<[T1, T2]> {
     return res;
 }
 
+export function chunk<T>(arr: T[], chunkSize: number): T[][] {
+    const res: T[][] = [];
+    let chunk: T[] = [];
+
+    for (const x of arr) {
+        if (chunk.length === chunkSize) {
+            res.push(chunk);
+            chunk = [];
+        }
+
+        chunk.push(x);
+    }
+
+    if (chunk.length > 0) {
+        res.push(chunk);
+    }
+
+    return res;
+}
+
 /**
  * Convert a TS list into a datalog "recursive" list.
  */

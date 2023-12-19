@@ -102,8 +102,7 @@ function parseFieldValFromCsv(val: any, typ: DatalogType): FieldVal {
     }
 
     if (typ === DatalogSymbol) {
-        sol.assert(typeof val === "string", `Expected a string`);
-        return val;
+        return String(val);
     }
 
     if (typ instanceof DatalogSubtype) {
@@ -173,7 +172,6 @@ export class Fact {
 
     static fromCSVRows(rel: Relation, rows: string[][]): Fact[] {
         const fieldTypes = rel.fields.map(([, typ]) => typ);
-        sol.assert(rows[0].length === fieldTypes.length, ``);
 
         return rows.map(
             (cols) =>
