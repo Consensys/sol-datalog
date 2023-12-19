@@ -26,14 +26,14 @@ function fieldValToJSON(val: FieldVal, typ: DatalogType): any {
             return null;
         }
 
-        sol.assert(val instanceof Object, `Expected an object in fieldValToJSON`);
+        sol.assert(val instanceof Object, `Expected an object in fieldValToJSON, not ${val}`);
         return typ.fields.map(([name, fieldT]) => fieldValToJSON(val[name], fieldT));
     }
 
     throw new Error(`NYI type ${typ.name}`);
 }
 
-function ppFieldVal(val: FieldVal, typ: DatalogType): string {
+export function ppFieldVal(val: FieldVal, typ: DatalogType): string {
     if (typ === DatalogSymbol) {
         return val as string;
     }
@@ -95,7 +95,7 @@ function translateVal(raw: ParsedFieldVal, typ: DatalogType): FieldVal {
     throw new Error(`NYI type ${typ.name}`);
 }
 
-function parseFieldValFromCsv(val: string, typ: DatalogType): FieldVal {
+function parseFieldValFromCsv(val: any, typ: DatalogType): FieldVal {
     if (typ === DatalogNumber) {
         sol.assert(typeof val === "number", `Expected a number`);
         return val;
@@ -110,8 +110,38 @@ function parseFieldValFromCsv(val: string, typ: DatalogType): FieldVal {
         return parseFieldValFromCsv(val, typ.baseType());
     }
 
-    sol.assert(typeof val === "string", `Expected a string`);
-    return translateVal(parseValue(val), typ);
+    if (typ instanceof DatalogRecordType) {
+        sol.assert(typeof val === "string", `Expected a string`);
+        return translateVal(parseValue(val), typ);
+    }
+
+    throw new Error(`NYI datalog type ${typ}`);
+}
+
+function parseFieldValFromSQL(val: any, typ: DatalogType): FieldVal {
+    if (typ === DatalogNumber) {
+        sol.assert(typeof val === "number", `Expected a number`);
+        return val;
+    }
+
+    if (typ === DatalogSymbol) {
+        sol.assert(typeof val === "string", `Expected a string`);
+        return val;
+    }
+
+    if (typ instanceof DatalogSubtype) {
+        return parseFieldValFromCsv(val, typ.baseType());
+    }
+
+    if (typ instanceof DatalogRecordType) {
+        if (typeof val === "string") {
+            return translateVal(parseValue(val), typ);
+        }
+
+        throw new Error(`NYI parsing record types from ${val}`);
+    }
+
+    throw new Error(`NYI datalog type ${typ}`);
 }
 
 export class Fact {
@@ -157,7 +187,7 @@ export class Fact {
     static fromSQLRow(rel: Relation, obj: any): Fact {
         return new Fact(
             rel,
-            rel.fields.map(([name]) => obj[name])
+            rel.fields.map(([name, typ]) => parseFieldValFromSQL(obj[name], typ))
         );
     }
 
@@ -166,7 +196,7 @@ export class Fact {
             (obj) =>
                 new Fact(
                     rel,
-                    rel.fields.map(([name]) => obj[name])
+                    rel.fields.map(([name, typ]) => parseFieldValFromSQL(obj[name], typ))
                 )
         );
     }

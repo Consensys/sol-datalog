@@ -104,7 +104,7 @@ describe("Analyses work in sqlite mode", () => {
             )) as SouffleSQLiteInstance;
 
             for (const [key, val] of Object.entries(expectedOutput)) {
-                const actualResutls = (await instance.getRelation(key)).map((f) => f.fields);
+                const actualResutls = (await instance.relationFacts(key)).map((f) => f.fields);
                 expect(actualResutls).toEqual(val);
             }
 
