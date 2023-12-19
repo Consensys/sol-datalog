@@ -211,7 +211,7 @@ function fieldValToSQLVal(val: FieldVal, typ: DatalogType): string {
     throw new Error(`NYI datalogToSQLType(${typ})`);
 }
 
-export class SouffleCSVToSQLInstance extends BaseSouffleCSVInstance implements SouffleInstanceI {
+export class SouffleCSVToSQLInstance extends BaseSouffleCSVInstance implements SouffleSQLInstanceI {
     private _db: Database<sqlite3.Database, sqlite3.Statement> | undefined;
     private _dbName: string | undefined;
 
@@ -271,6 +271,11 @@ export class SouffleCSVToSQLInstance extends BaseSouffleCSVInstance implements S
     async getSQL(sql: string): Promise<any[]> {
         const db = await this.getDB();
         return await db.all(sql);
+    }
+
+    dbName(): string {
+        sol.assert(this._dbName !== undefined, `Analysis hasn't run yet`);
+        return this._dbName;
     }
 }
 
