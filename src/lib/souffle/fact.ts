@@ -58,7 +58,7 @@ export function ppFieldVal(val: FieldVal, typ: DatalogType): string {
     throw new Error(`NYI type ${typ.name}`);
 }
 
-function translateVal(raw: ParsedFieldVal, typ: DatalogType): FieldVal {
+export function translateVal(raw: ParsedFieldVal, typ: DatalogType): FieldVal {
     if (typ === DatalogNumber) {
         sol.assert(
             typeof raw === "number",
