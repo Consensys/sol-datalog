@@ -6,14 +6,16 @@
 // Computes all function with id funId that have `msg.sender` expression with id eId
 .decl funHasMsgSenderBuiltin(funId: id, eId: id)
 funHasMsgSenderBuiltin(funId, eId) :-
-    MemberAccess(eId, _, baseId, "sender", _),
-    Identifier(baseId, _, "msg", _),
+    MemberAccess(eId),
+    MemberAccess_expression(eId, baseId),
+    MemberAccess_memberName(eId, "sender"),
+    Identifier_name(baseId, "msg"),
     ancestor(funId, eId).
 
 // Computes all function with id funId that have `_msgSender` expression with id eId
 .decl funHasMsgSenderCall(funId: id, eId: id)
 funHasMsgSenderCall(funId, eId) :-
-    Identifier(eId, _, "_msgSender", _),
+    Identifier_name(eId, "_msgSender"),
     ancestor(funId, eId).
 
 /// MAIN DETECTOR RELATION
@@ -27,10 +29,10 @@ msgSenderInconsistency_Detector(c1, f1, e1, c2, f2, e2) :-
      c1 != c2, inherits(c1, c2);
      c1 != c2, inherits(c2, c1)
     ),
-    method(c1, msgSenderId),
-    function("_msgSender", msgSenderId),
-    functionIn(f1Name, f1, c1),
-    functionIn(f2Name, f2, c2),
+    method(msgSenderId, c1),
+    function(msgSenderId, "_msgSender"),
+    functionIn(f1, f1Name, c1),
+    functionIn(f2, f2Name, c2),
     funHasMsgSenderBuiltin(f1, e1),
     funHasMsgSenderCall(f2, e2),
     f1Name != "_msgSender".

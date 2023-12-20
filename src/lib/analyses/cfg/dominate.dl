@@ -7,8 +7,8 @@ dominate(pred, succ) :-
 /// If statement A dominates statement B, A dominates all expressions in B
 dominate(pred, succ) :-
     Statement(pred),
-    dominateStmt(pred, B),
     Statement(B),
+    dominateStmt(pred, B),
     ancestor(B, succ),
     Expression(succ).
 
@@ -28,39 +28,54 @@ dominate(pred, succ) :-
 
 /// Assignment
 dominate(pred, succ) :-
-    Assignment(_, _, _, succ, pred).
+    Assignment(aid),
+    Assignment_leftHandSide(aid, succ),
+    Assignment_rightHandSide(aid, pred).
 
 /// BinaryOperation
 dominate(pred, succ) :-
-    BinaryOperation(boId, _, _, pred, succ, _, _).
+    BinaryOperation(boId),
+    BinaryOperation_leftExpression(boId, pred),
+    BinaryOperation_rightExpression(boId, succ).
 
 /// Conditional
 dominate(pred, succ) :-
-    Conditional(_, _, pred, succ, _).
+    Conditional(cId),
+    Conditional_condition(cId, pred),
+    Conditional_trueExpression(cId, succ).
 
 dominate(pred, succ) :-
-    Conditional(_, _, pred, _, succ).
+    Conditional(cId),
+    Conditional_condition(cId, pred),
+    Conditional_falseExpression(cId, succ).
+
 
 /// FunctionCall
 dominate(pred, succ) :-
-    FunctionCall(fcId, _, _, _),
-    FunctionCall_vArguments(fcId, pred, i),
-    FunctionCall_vArguments(fcId, succ, i + 1).
+    FunctionCall(fcId),
+    FunctionCall_arguments(fcId, pred, i),
+    FunctionCall_arguments(fcId, succ, i + 1).
 
 /// IndexAccess
 dominate(pred, succ) :-
-    IndexAccess(_, _, succ, pred, 1).
+    IndexAccess(iaId),
+    IndexAccess_baseExpression(aId, succ),
+    IndexAccess_indexExpression(iaId, pred, 1).
 
 /// IndexRangeAccess
 dominate(pred, succ) :-
-    IndexRangeAccess(_, _, succ, pred, 1, _, _).
+    IndexRangeAccess(iraId), 
+    IndexRangeAccess_baseExpression(iraId, succ),
+    IndexRangeAccess_startExpression(iraId, pred, 1).
 
 dominate(pred, succ) :-
-    IndexRangeAccess(_, _, succ, _, _, pred, 1).
+    IndexRangeAccess(iraId), 
+    IndexRangeAccess_baseExpression(iraId, succ),
+    IndexRangeAccess_endExpression(iraId, pred, 1).
 
 /// TupleExpression
 dominate(pred, succ) :-
-    TupleExpression(tId, _, _),
+    TupleExpression(tId),
     TupleExpression_components(tId, pred, i),
     TupleExpression_components(tId, succ, i + 1).
 
