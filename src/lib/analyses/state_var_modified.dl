@@ -3,19 +3,30 @@
 
 // Simple reference to the variable
 stateVarModifiedInLHS(varId, exprId) :-
-    Identifier(exprId, _, _, varId).
+    Identifier(exprId),
+    Identifier_referencedDeclaration(exprId, varId).
+
 // A member access referring to the variable (e.g. this.x, Foo.x)
 stateVarModifiedInLHS(varId, exprId) :-
-    MemberAccess(exprId, _, _, _, varId).
+    MemberAccess(exprId),
+    MemberAccess_referencedDeclaration(exprId, varId).
+
 // A struct member access x.foo
 stateVarModifiedInLHS(varId, exprId) :-
-    MemberAccess(exprId, _, subExprId, _, _), stateVarModifiedInLHS(varId, subExprId). // A str
+    MemberAccess(exprId),
+    MemberAccess_expression(exprId, subExprId),
+    stateVarModifiedInLHS(varId, subExprId).
+
 // An index into the state var x[a]
 stateVarModifiedInLHS(varId, exprId) :-
-    IndexAccess(exprId, _, baseExprId, _, _), stateVarModifiedInLHS(varId, baseExprId).
+    IndexAccess(exprId),
+    IndexAccess_baseExpression(exprId, baseExprId),
+    stateVarModifiedInLHS(varId, baseExprId).
+ 
 // An tuple expression
 stateVarModifiedInLHS(varId, exprId) :-
-    TupleExpression(exprId, _, 0), 
+    TupleExpression(exprId), 
+    TupleExpression_isInlineArray(exprId, 0),
     TupleExpression_components(exprId, componentId, _),
     componentId >= 0,
     stateVarModifiedInLHS(varId, componentId).
@@ -25,19 +36,20 @@ stateVarModifiedInLHS(varId, exprId) :-
 
 // Simple assignment case
 varModifiedInLHSOfAssignment(varId, assignmentId) :-
-    Assignment(assignmentId, _, _, lhsId, _),
+    Assignment(assignmentId),
+    Assignment_leftHandSide(assignmentId, lhsId),
     stateVarModifiedInLHS(varId, lhsId).
 
 // Compute whether the state var "varContractName.stateVarName" is changed  inside the method "funContractName.funName"
 .decl stateVarAssignedIn(varContractName: symbol, stateVarName: symbol, funContractName: symbol, funName: symbol)
 
 stateVarAssignedIn(varContractName, stateVarName, funContractName, funName) :-
-    contract(varContractName, varContractId),
-    contract(funContractName, funContractId),
-    stateVar(stateVarName, sId),
+    contract(varContractId, varContractName),
+    contract(funContractId, funContractName),
+    stateVar(sId, stateVarName),
     ancestor(varContractId, sId),
-    function(funName, fId),
+    function(fId, funName),
     ancestor(funContractId, fId),
-    Assignment(assignId, _, _, _, _),
+    Assignment(assignId),
     ancestor(fId, assignId),
     varModifiedInLHSOfAssignment(sId, assignId).

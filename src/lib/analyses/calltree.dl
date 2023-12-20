@@ -1,10 +1,10 @@
 .decl callsDirectly(caller: FunctionDefinitionId, callee: FunctionDefinitionId)
 callsDirectly(caller, callee) :- 
-    FunctionDefinition(caller, _, _, _, _, _, _, _, _, _, _, _, _, _),
-    FunctionDefinition(callee, _, _, _, _, _, _, _, _, _, _, _, _, _),
-    FunctionCall(callId, _, _, exprId),
-    (Identifier(exprId, _, _, callee) ;
-     MemberAccess(exprId, _, _, _, callee)),
+    FunctionDefinition(caller),
+    FunctionDefinition(callee),
+    FunctionCall(callId),
+    FunctionCall_expression(callId, exprId),
+    exprRefersTo(exprId, callee),
     ancestor(caller, callId).
 
 .type CallPath = [ head: FunctionDefinitionId, tail: CallPath ]
