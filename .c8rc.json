@@ -6,8 +6,10 @@
         "**/test/**",
         "**/coverage/**",
         "**/.compiler_cache/**",
+        "**/scripts/**",
         "src/bin/cli.ts",
-        "scripts/gen_preamble.ts"
+        "src/lib/souffle/value_header.ts",
+        "src/lib/souffle/value_parser.ts"
     ],
     "reporter": ["lcov", "text-summary"],
     "all": true,
