@@ -28,8 +28,8 @@ function getDetectors(): string {
     return getDLFromFolder(DETECTORS_DIR);
 }
 
-export function buildDatalog(units: sol.SourceUnit[]): string {
-    const unitsDL = datalogFromUnits(units);
+export function buildDatalog(units: sol.SourceUnit[], infer: sol.InferType): string {
+    const unitsDL = datalogFromUnits(units, infer);
     const analyses = getAnalyses();
     const detectors = getDetectors();
     return [
@@ -46,11 +46,12 @@ export function buildDatalog(units: sol.SourceUnit[]): string {
  */
 export async function analyze(
     units: sol.SourceUnit[],
+    infer: sol.InferType,
     mode: SouffleOutputType,
     outputRelations: string[],
     soDir?: string
 ): Promise<SouffleCSVInstance | SouffleSQLiteInstance> {
-    const datalog = buildDatalog(units);
+    const datalog = buildDatalog(units, infer);
 
     const instance =
         mode === "csv"
@@ -65,13 +66,17 @@ export async function analyze(
 /**
  * Helper function to run all detectors and ouput just their results
  */
-export async function detect(units: sol.SourceUnit[], context: sol.ASTContext): Promise<Issue[]> {
+export async function detect(
+    units: sol.SourceUnit[],
+    context: sol.ASTContext,
+    infer: sol.InferType
+): Promise<Issue[]> {
     const detectorTemplates = loadDetectors();
     const outputRelations = detectorTemplates.map(
         (template) => parseTemplateSignature(template.relationSignature)[0]
     );
 
-    const instance = (await analyze(units, "csv", outputRelations)) as SouffleCSVInstance;
+    const instance = (await analyze(units, infer, "csv", outputRelations)) as SouffleCSVInstance;
     const outputs = instance.results();
 
     instance.release();

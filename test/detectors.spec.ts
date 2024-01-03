@@ -12,6 +12,7 @@ describe("Detectors", () => {
             let units: sol.SourceUnit[];
             let expectedIssues: Issue[];
             let ctx: sol.ASTContext;
+            let version: string;
 
             before(async () => {
                 const result = await sol.compileSol(sample, "auto");
@@ -22,6 +23,8 @@ describe("Detectors", () => {
                 expect(errors).toHaveLength(0);
 
                 const reader = new sol.ASTReader();
+
+                version = result.compilerVersion as string;
 
                 units = reader.read(data);
                 ctx = reader.context;
@@ -34,7 +37,8 @@ describe("Detectors", () => {
             });
 
             it("Detectors produce expected results", async () => {
-                const actualIssues = await detect(units, ctx);
+                const infer = new sol.InferType(version);
+                const actualIssues = await detect(units, ctx, infer);
 
                 expect(actualIssues).toEqual(expectedIssues);
             });

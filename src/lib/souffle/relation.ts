@@ -1,6 +1,6 @@
 import { DatalogType, TypeEnv, mustLookupType } from "./types";
 
-const declRX = /.decl *([a-zA-Z0-9_]*) *\(([^)]*)\)/g;
+const declRX = /\.decl *([a-zA-Z0-9_]*) *\(([^)]*)\)/g;
 
 export class Relation {
     constructor(

@@ -102,6 +102,10 @@ const staticPreamble = `
 
 .decl parent(parentId: id, childId: id)
 .decl src(id: id, src: symbol)
+.decl Node(id: id)
+.decl ExternalCall(id: FunctionCallId)
+.decl ConstantExpression(id: id)
+.decl CompilerVersion(major: number, minor: number, patch: number)
 .decl Expression(id: id)
 .decl Statement(id: id)
 .decl StatementWithChildren(id: id)
@@ -111,25 +115,25 @@ const staticPreamble = `
 .decl ContractDefinition_usedErrors(parentId: ContractDefinitionId, childId: ErrorDefinitionId, idx: number)
 .decl ContractDefinition_usedEvents(parentId: ContractDefinitionId, childId: EventDefinitionId, idx: number)
 .decl TupleExpression_components(parentId: TupleExpressionId, childId: ExpressionId, idx: number)
-.decl FunctionDefinition_vModifiers(parentId: FunctionDefinitionId, childId: ModifierInvocationId, idx: number)
-.decl FunctionCall_vArguments(parentId: FunctionCallId, childId: ExpressionId, idx: number)
-.decl TryStatement_vClauses(parentId: TryStatementId, childId: TryCatchClauseId, idx: number)
-.decl VariableDeclarationStatement_vDeclarations(parentId: VariableDeclarationStatementId, childId: VariableDeclarationId, idx: number)
-.decl InheritanceSpecifier_vArguments(parentId: InheritanceSpecifierId, childId: ExpressionId, idx: number)
-.decl ModifierInvocation_vArguments(parentId: ModifierInvocationId, childId: ExpressionId, idx: number)
-.decl ParameterList_vParameters(parentId: ParameterListId, childId: VariableDeclarationId, idx: number)
-.decl Block_vStatements(parentId: BlockId, childId: StatementId, idx: number)
-.decl UncheckedBlock_vStatements(parentId: UncheckedBlockId, childId: StatementId, idx: number)
-.decl UsingForDirective_vFunctionList(parentId: UsingForDirectiveId, childId: IdentifierPathId, operator: symbol, idx: number)
-.decl StructDefinition_vMembers(parentId: StructDefinitionId, childId: VariableDeclarationId, idx: number)
-.decl EnumDefinition_vMembers(parentId: EnumDefinitionId, childId: EnumValueId, idx: number)
+.decl FunctionDefinition_modifiers(parentId: FunctionDefinitionId, childId: ModifierInvocationId, idx: number)
+.decl FunctionCall_arguments(parentId: FunctionCallId, childId: ExpressionId, idx: number)
+.decl TryStatement_clauses(parentId: TryStatementId, childId: TryCatchClauseId, idx: number)
+.decl VariableDeclarationStatement_declarations(parentId: VariableDeclarationStatementId, childId: VariableDeclarationId, idx: number)
+.decl InheritanceSpecifier_arguments(parentId: InheritanceSpecifierId, childId: ExpressionId, idx: number)
+.decl ModifierInvocation_arguments(parentId: ModifierInvocationId, childId: ExpressionId, idx: number)
+.decl ParameterList_parameters(parentId: ParameterListId, childId: VariableDeclarationId, idx: number)
+.decl Block_statements(parentId: BlockId, childId: StatementId, idx: number)
+.decl UncheckedBlock_statements(parentId: UncheckedBlockId, childId: StatementId, idx: number)
+.decl UsingForDirective_functionList(parentId: UsingForDirectiveId, childId: IdentifierPathId, operator: symbol, idx: number)
+.decl StructDefinition_members(parentId: StructDefinitionId, childId: VariableDeclarationId, idx: number)
+.decl EnumDefinition_members(parentId: EnumDefinitionId, childId: EnumValueId, idx: number)
 .decl VariableDeclarationStatement_assignments(parentId: VariableDeclarationStatementId, childId: VariableDeclarationId, idx: number)
-.decl OverrideSpecifier_vOverrides(parentId: OverrideSpecifierId, childId: id, idx: number)
+.decl OverrideSpecifier_overrides(parentId: OverrideSpecifierId, childId: id, idx: number)
 
 .decl FunctionCall_fieldNames(parentId: FunctionCallId, name: symbol, idx: number)
 .decl PragmaDirective_literals(parentId: FunctionCallId, literal: symbol, idx: number)
 .decl SourceUnit_exportedSymbols(parentId: SourceUnitId, name: symbol, id: id)
-.decl FunctionCallOptions_vOptionsMap(parentId: FunctionCallOptionsId, name: symbol, id: id)
+.decl FunctionCallOptions_options(parentId: FunctionCallOptionsId, name: symbol, id: id)
 `;
 
 const skipFields = ["raw", "documentation", "nameLocation", "children", "src"];
@@ -268,8 +272,6 @@ function buildNodeDecls(name, constructor, baseName) {
 
     const res = [`.type ${name}Id <: ${idBaseType}`];
 
-    let dynamicArgs = [];
-
     for (let [paramName, optional, type] of params.slice(2)) {
         if (shouldSkipField(name, paramName)) {
             continue;
@@ -336,33 +338,21 @@ function buildNodeDecls(name, constructor, baseName) {
             datalogT = translateType(type);
         }
 
-        dynamicArgs.push(`${paramName}: ${datalogT}`);
-
         if (optional) {
-            dynamicArgs.push(`has${paramName}: bool`);
+            res.push(`.decl ${name}_${paramName}(id: ${name}Id, val: ${datalogT}, present: bool)`);
+        } else {
+            res.push(`.decl ${name}_${paramName}(id: ${name}Id, val: ${datalogT})`);
         }
     }
 
     if (idBaseType !== "id") {
-        res.push(
-            `${idBaseType.slice(0, -2)}(id) :- ${name}(id${
-                dynamicArgs.length > 0 ? ", " + repeat("_", dynamicArgs.length).join(", ") : ""
-            }).`
-        );
+        res.push(`${idBaseType.slice(0, -2)}(id) :- ${name}(id).`);
     }
 
-    res.push(
-        `.decl ${name}(id: ${name}Id${dynamicArgs.length > 0 ? ", " + dynamicArgs.join(", ") : ""})`
-    );
-
-    return res;
-}
-
-function repeat(a, n) {
-    const res = [];
-    for (let i = 0; i < n; i++) {
-        res.push(a);
-    }
+    // Note that this is a node type
+    res.push(`Node(id) :- ${name}(id).`);
+    // Add the decl itself
+    res.push(`.decl ${name}(id: ${name}Id)`);
 
     return res;
 }
@@ -632,6 +622,14 @@ const paramRenameMap = new Map([
     ["OverrideSpecifier", new Map([["overrides", "vOverrides"]])]
 ]);
 
+function getCanonicalParamName(className, paramName) {
+    if (paramRenameMap.has(className) && paramRenameMap.get(className).has(paramName)) {
+        return paramRenameMap.get(className).get(paramName);
+    }
+
+    return paramName;
+}
+
 function translateFactArg(name, paramName, type) {
     let ref = `nd.${paramName}`;
 
@@ -704,48 +702,47 @@ function isTsTKnownArray(name, paramName, tsT) {
     return false;
 }
 
-function buildFactInvocation(name, constructor) {
+function buildFactInvocation(className, constructor, baseName) {
     const rawParams = constructor.getParameters();
     const params = rawParams.map((p) => [p.getName(), p.isOptional(), p.getType().getText()]);
 
     assert(
         params.length >= 2 && params[0][0] === "id" && params[1][0] === "src",
-        `First 2 params are id and src for ${name}`
+        `First 2 params are id and src for ${className}`
     );
 
-    let res = ``;
-
-    // Add src relation
-    res += `res.push(\`src(\${nd.id}, "\${nd.src}").\`);`;
+    // Add anchor and src relations
+    let res = `
+        res.push(\`${className}(\${nd.id}).\`);
+        res.push(\`src(\${nd.id}, "\${nd.src}").\`);
+`;
 
     // Add relations for map arguments
     for (let [paramName, optional] of params.slice(2)) {
         const args = [`\${nd.id}`];
 
-        if (name === "SourceUnit" && paramName === "exportedSymbols") {
+        if (className === "SourceUnit" && paramName === "exportedSymbols") {
             args.push("${'\"' + k + '\"'}", `\${v}`);
-        } else if (name === "FunctionCallOptions" && paramName === `options`) {
+        } else if (className === "FunctionCallOptions" && paramName === `options`) {
             args.push("${'\"' + k + '\"'}", `\${v.id}`);
         } else {
             continue;
         }
 
-        assert(!optional, `Unexpected optional map param ${name}.${paramName}`);
+        assert(!optional, `Unexpected optional map param ${className}.${paramName}`);
 
-        if (paramRenameMap.has(name) && paramRenameMap.get(name).has(paramName)) {
-            paramName = paramRenameMap.get(name).get(paramName);
-        }
+        const canonicalParamName = getCanonicalParamName(className, paramName);
 
         res += `
-    for (let [k, v] of nd.${paramName}.entries()) {
-        res.push(\`${name}_${paramName}(${args.join(", ")}).\`);
+    for (let [k, v] of nd.${canonicalParamName}.entries()) {
+        res.push(\`${className}_${paramName}(${args.join(", ")}).\`);
     }
 `;
     }
 
     // Add relations for array arguments
     for (let [paramName, optional, type] of params.slice(2)) {
-        if (!isTsTKnownArray(name, paramName, type)) {
+        if (!isTsTKnownArray(className, paramName, type)) {
             continue;
         }
 
@@ -753,9 +750,7 @@ function buildFactInvocation(name, constructor) {
             continue;
         }
 
-        if (paramRenameMap.has(name) && paramRenameMap.get(name).has(paramName)) {
-            paramName = paramRenameMap.get(name).get(paramName);
-        }
+        const canonicalParamName = getCanonicalParamName(className, paramName);
 
         const args = [`\${nd.id}`];
 
@@ -764,14 +759,14 @@ function buildFactInvocation(name, constructor) {
         } else if (type === `string[]`) {
             args.push(`\${'"' + t + '"'}`);
         } else if (
-            (name === "TupleExpression" && paramName === "components") ||
-            (name === "VariableDeclarationStatement" && paramName === "assignments")
+            (className === "TupleExpression" && canonicalParamName === "components") ||
+            (className === "VariableDeclarationStatement" && canonicalParamName === "assignments")
         ) {
             args.push(`\${t === null ? -1 : t}`);
-        } else if (name === "UsingForDirective" && paramName === "vFunctionList") {
+        } else if (className === "UsingForDirective" && canonicalParamName === "vFunctionList") {
             args.push(`\${t instanceof sol.ASTNode ? t.id : t.definition.id}`);
             args.push(`\${t instanceof sol.ASTNode ? '""' : \`"\${t.operator}"\`}`);
-        } else if (name === "FunctionCall" && paramName === "fieldNames") {
+        } else if (className === "FunctionCall" && canonicalParamName === "fieldNames") {
             args.push(`\${'"' + t + '"'}`);
         } else {
             args.push(`\${t.id}`);
@@ -779,14 +774,23 @@ function buildFactInvocation(name, constructor) {
 
         args.push(`\${i}`);
 
+        if (
+            (className === "FunctionCall" ||
+                className === "ModifierInvocation" ||
+                className === "InheritanceSpecifier") &&
+            paramName === "args"
+        ) {
+            paramName = "arguments";
+        }
+
         let expr = `
-    for (let i = 0; i < nd.${paramName}.length; i++) {
-        let t = nd.${paramName}[i];
-        res.push(\`${name}_${paramName}(${args.join(", ")}).\`);
+    for (let i = 0; i < nd.${canonicalParamName}.length; i++) {
+        let t = nd.${canonicalParamName}[i];
+        res.push(\`${className}_${paramName}(${args.join(", ")}).\`);
     }
 `;
         if (optional) {
-            expr = `if (nd.${paramName} !== undefined) {
+            expr = `if (nd.${canonicalParamName} !== undefined) {
                 ${expr}
             }`;
         }
@@ -794,25 +798,21 @@ function buildFactInvocation(name, constructor) {
         res += expr;
     }
 
-    // Build arguments to main relation for the node
-    let dynamicArgs = ["nd.id"];
-
+    // Add relations for normal arguments
     for (let [paramName, optional, type] of params.slice(2)) {
-        if (shouldSkipField(name, paramName)) {
+        if (shouldSkipField(className, paramName)) {
             continue;
         }
 
-        if (name === "ElementaryTypeName" && paramName === "stateMutability") {
+        if (className === "ElementaryTypeName" && paramName === "stateMutability") {
             optional = false;
         }
 
-        if (name === "UserDefinedTypeName" && paramName === "name") {
+        if (className === "UserDefinedTypeName" && paramName === "name") {
             optional = true;
         }
 
-        if (paramRenameMap.has(name) && paramRenameMap.get(name).has(paramName)) {
-            paramName = paramRenameMap.get(name).get(paramName);
-        }
+        const canonicalParamName = getCanonicalParamName(className, paramName);
 
         if (optional) {
             assert(
@@ -822,24 +822,36 @@ function buildFactInvocation(name, constructor) {
             type = type.slice(0, -12);
         }
 
-        let dynamicArg = translateFactArg(name, paramName, type);
+        let dynamicArg = translateFactArg(className, canonicalParamName, type);
 
         if (optional) {
-            dynamicArg = `nd.${paramName} === undefined ? ${getDefaultValue(
-                name,
-                paramName,
+            dynamicArg = `nd.${canonicalParamName} === undefined ? ${getDefaultValue(
+                className,
+                canonicalParamName,
                 type
             )} : ${dynamicArg}`;
         }
 
-        dynamicArgs.push(dynamicArg);
-
         if (optional) {
-            dynamicArgs.push(`nd.${paramName} !== undefined`);
+            res += `res.push(\`${className}_${paramName}(\${nd.id}, \${translateVal(${dynamicArg})}, \${translateVal(nd.${canonicalParamName} !== undefined)}).\`);`;
+        } else {
+            res += `res.push(\`${className}_${paramName}(\${nd.id}, \${translateVal(${dynamicArg})}).\`);`;
         }
     }
 
-    res += `args = translateVals(${dynamicArgs.join(", ")});`;
+    if (className === "FunctionCall") {
+        res += `if (infer.isFunctionCallExternal(nd)) {
+            res.push(\`ExternalCall(\${nd.id}).\`);
+        }
+`;
+    }
+
+    if (baseName === "Expression" || baseName === "PrimaryExpression") {
+        res += `if (sol.isConstant(nd)) {
+            res.push(\`ConstantExpression(\${nd.id}).\`);
+        }
+`;
+    }
 
     return res;
 }
@@ -848,9 +860,10 @@ function buildFactBuilderFun(classDescs) {
     let body = "";
 
     for (let i = 0; i < classDescs.length; i++) {
-        const [name, , constructor] = classDescs[i];
+        const [name, classDecl, constructor] = classDescs[i];
+        const bases = classDecl.getHeritage().filter((n) => astClassNames.has(n.getName()));
 
-        const ifBody = buildFactInvocation(name, constructor);
+        const ifBody = buildFactInvocation(name, constructor, bases[0].getName());
 
         if (body !== "") {
             body += " else ";
@@ -864,11 +877,9 @@ function buildFactBuilderFun(classDescs) {
     body += ` else {\n    throw new Error(\`Unknown AST node type \${nd.constructor.name}.\`);\n}`;
 
     return `
-export function translateASTNodeInternal(nd: sol.ASTNode): string[] {
-    let args: string[];
+export function translateASTNodeInternal(nd: sol.ASTNode, infer: sol.InferType): string[] {
     let res: string[] = [];
     ${body}
-    res.push(\`\${nd.constructor.name}(\${args.join(", ")}).\`);
     return res;
 }
 `;
@@ -932,7 +943,7 @@ async function main() {
     const factBuilderFun = buildFactBuilderFun(classes);
     const translateContents = `
 import * as sol from "solc-typed-ast";
-import { translateVals, sanitizeString } from "../lib/utils";
+import { sanitizeString, translateVal } from "../lib/utils";
 
 ${factBuilderFun}
 `;

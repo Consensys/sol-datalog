@@ -21,6 +21,26 @@ export function zip<T1, T2>(x: T1[], y: T2[]): Array<[T1, T2]> {
     return res;
 }
 
+export function chunk<T>(arr: T[], chunkSize: number): T[][] {
+    const res: T[][] = [];
+    let chunk: T[] = [];
+
+    for (const x of arr) {
+        if (chunk.length === chunkSize) {
+            res.push(chunk);
+            chunk = [];
+        }
+
+        chunk.push(x);
+    }
+
+    if (chunk.length > 0) {
+        res.push(chunk);
+    }
+
+    return res;
+}
+
 /**
  * Convert a TS list into a datalog "recursive" list.
  */
@@ -53,7 +73,7 @@ export function sanitizeString(s: string): string {
         .replaceAll(/[^\x20-\x7E]+/g, ""); // Remove remaining unicode characters
 }
 
-function translateVal(a: any): string {
+export function translateVal(a: any): string {
     if (typeof a === "string") {
         return `"${a}"`;
     }
@@ -73,11 +93,6 @@ function translateVal(a: any): string {
     console.trace();
 
     throw new Error(`Don't know how to translate ${a}`);
-}
-
-export function translateVals(...a: any[]): string[] {
-    // console.error(`translateVals`, a);
-    return a.map(translateVal);
 }
 
 export function searchRecursive(targetPath: string, filter: (entry: string) => boolean): string[] {
