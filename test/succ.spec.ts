@@ -32,7 +32,7 @@ samples.push(...searchRecursive("test/samples", (fileName) => fileName.endsWith(
 /*
 samples = samples.slice(
     samples.indexOf(
-        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/struct_docs_05.sol"
+        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/statements/for_0413.sol"
     )
 );
 */
@@ -161,6 +161,25 @@ export function dumpFacts(fs: Fact[]): void {
     }
 }
 
+function isInsideArrayTypename(element: sol.ASTNode): boolean {
+    // Ignore literals inside array typenames (e.g. uint[4]).
+    if (element.getClosestParentByType(sol.ArrayTypeName) !== undefined) {
+        return true;
+    }
+
+    // Note sometimes array typenames for user-defined
+    // types appear as IndexExpressions
+    if (element.getClosestParentByType(sol.IndexAccess) !== undefined) {
+        const t = element.getClosestParentByType(sol.IndexAccess) as sol.IndexAccess;
+
+        if (t.typeString.startsWith("type(")) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 describe("Test succ relation for all samples", () => {
     for (const sample of samples) {
         describe(sample, () => {
@@ -221,7 +240,7 @@ describe("Test succ relation for all samples", () => {
                 }
             });
 
-            it("Every expression/statement inside a function body is reachable", async () => {
+            it("Every expression/statement inside a function body is reachable", () => {
                 for (const unit of units) {
                     for (const fun of unit.getChildrenByType(sol.FunctionDefinition)) {
                         if (fun.vBody === undefined) {
@@ -254,19 +273,8 @@ describe("Test succ relation for all samples", () => {
                                 continue;
                             }
 
-                            // Ignore literals inside array typenames (e.g. uint[4]).
-                            if (element.getClosestParentByType(sol.ArrayTypeName) !== undefined) {
+                            if (isInsideArrayTypename(element)) {
                                 continue;
-                            }
-
-                            // Note sometimes array typenames for user-defined
-                            // types appear as IndexExpressions
-                            if (element.getClosestParentByType(sol.IndexAccess) !== undefined) {
-                                const t = element.getClosestParentByType(
-                                    sol.IndexAccess
-                                ) as sol.IndexAccess;
-
-                                if (t.typeString.startsWith("type(")) continue;
                             }
 
                             // Skip blocks ending in a non-fallthrough statements -they are not reachable from the entry of the function
@@ -275,15 +283,6 @@ describe("Test succ relation for all samples", () => {
                                     element instanceof sol.UncheckedBlock ||
                                     element instanceof sol.TryCatchClause) &&
                                 !isFallThrough(element)
-                            ) {
-                                continue;
-                            }
-
-                            // Skip empty blocks (they are not part of the succ relation)
-                            if (
-                                (element instanceof sol.Block ||
-                                    element instanceof sol.UncheckedBlock) &&
-                                element.vStatements.length === 0
                             ) {
                                 continue;
                             }
@@ -304,6 +303,60 @@ describe("Test succ relation for all samples", () => {
                             }
 
                             expect(reachable.has(element.id)).toBeTruthy();
+                        }
+                    }
+                }
+            });
+
+            it("The only nodes without a succ are terminator nodes and the function body", () => {
+                for (const unit of units) {
+                    for (const fun of unit.getChildrenByType(sol.FunctionDefinition)) {
+                        if (fun.vBody === undefined) {
+                            continue;
+                        }
+
+                        for (const element of fun.vBody.getChildren()) {
+                            if (
+                                !(
+                                    element instanceof sol.Expression ||
+                                    element instanceof sol.Statement ||
+                                    element instanceof sol.StatementWithChildren
+                                )
+                            ) {
+                                continue;
+                            }
+
+                            if (isInsideArrayTypename(element)) {
+                                continue;
+                            }
+
+                            const succs = g.get(element.id);
+
+                            if (succs === undefined || succs.size === 0) {
+                                if (
+                                    verbose &&
+                                    !(
+                                        element === fun.vBody ||
+                                        element instanceof sol.Return ||
+                                        element instanceof sol.Throw ||
+                                        element instanceof sol.RevertStatement
+                                    )
+                                ) {
+                                    console.error(
+                                        `Unexpected element ${sol.pp(
+                                            element
+                                        )} (|${element.extractSourceFragment(
+                                            contents
+                                        )}|)without succ in ${fun.name}`
+                                    );
+                                }
+                                expect(
+                                    element === fun.vBody ||
+                                        element instanceof sol.Return ||
+                                        element instanceof sol.Throw ||
+                                        element instanceof sol.RevertStatement
+                                ).toBeTruthy();
+                            }
                         }
                     }
                 }

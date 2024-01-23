@@ -218,7 +218,7 @@
         TupleExpression(teId),
         !TupleExpression_components(teId, _, _, _).
 
-// Statements succ
+    // Statements succ
     // ---------- HELPERS -------------
     // True if nd is a checked or unchecked block
     .decl isBlock(nd: id) 
@@ -229,23 +229,7 @@
     // Non-block fall-through statements
     fallThrough(id) :-
         Statement(id),
-        !isBlock(id),
         !(Return(id) ; Break(id) ; Continue(id); RevertStatement(id); Throw(id)).
-
-    // Empty blocks are fall-through
-    fallThrough(id) :-
-        isBlock(id),
-        !lastStmt(id, _).
-
-    // Blocks whose last statement is fall-through are also fall-through
-    fallThrough(id) :-
-        isBlock(id),
-        lastStmt(id, lastStmt),
-        fallThrough(lastStmt).
-
-    // True if nd is not a "fall-through" statement (i.e. if control-flow does not continue to the next statement).
-    .decl noFallThrough(nd: id)
-    noFallThrough(nd) :- Statement(nd), !fallThrough(nd).
 
     // True if nd is a loop statement.
     .decl isLoop(node: id)
@@ -264,25 +248,35 @@
     // ---- Block or UncheckedBlock
     // For non-empty blocks the first thing in the first statement is first
     succ_first(bId, first) :-
-        firstStmt(bId, firstStmtId), // this ensures bId is a block
+        (Block_statements(bId, firstStmtId, 0) ; UncheckedBlock_statements(bId, firstStmtId, 0)),
         succ_first(firstStmtId, first).
 
     // For empty blocks we consider them immediately executed
     succ_first(bId, bId) :-
-        isBlock(bId),
-        !firstStmt(bId, _).
+        ((Block(bId), !Block_statements(bId, _, _)) ; (UncheckedBlock(bId), !UncheckedBlock_statements(bId, _, _))).
 
     // Control flow goes from one statement to the next in a block, if the prev
-    // is not a terminator
+    // is fall-through
     succ(prev, next) :-
+        Block(bId), Block_statements(bId, prev, i), Block_statements(bId, nextStmt, i+1),
         fallThrough(prev),
-        nextStmt(prev, nextStmt),
+        succ_first(nextStmt, next).
+
+    succ(prev, next) :-
+        UncheckedBlock(bId), UncheckedBlock_statements(bId, prev, i), UncheckedBlock_statements(bId, nextStmt, i+1),
+        fallThrough(prev),
         succ_first(nextStmt, next).
 
     // The block is considered executed, after the last statement executes, if
-    // the last statement is not a terminator
+    // the last statement is fall-through
     succ(prev, next) :-
-        lastStmt(next, prev),
+        Block_statements(next, prev, i),
+        (!Block_statements(next, _, i+1)),
+        fallThrough(prev).
+
+    succ(prev, next) :-
+        UncheckedBlock_statements(next, prev, i),
+        (!UncheckedBlock_statements(next, _, i+1)),
         fallThrough(prev).
 
     // ---- ExpressionStatement
@@ -477,6 +471,13 @@
         ForStatement_loopExpression(fsId, prev, 1),
         ForStatement_condition(fsId, condId, 1),
         succ_first(condId, next).
+
+    // After the loop expression we execute the body (if there is no condition)
+    succ(prev, next) :-
+        ForStatement_loopExpression(fsId, prev, 1),
+        ForStatement_condition(fsId, _, 0),
+        ForStatement_body(fsId, body),
+        succ_first(body, next).
 
     // After the condition we may exit the loop
     succ(prev, next) :-
