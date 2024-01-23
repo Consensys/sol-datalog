@@ -37,10 +37,55 @@ function translateNode(nd: sol.ASTNode, infer: sol.InferType): string[] {
     return res;
 }
 
+/**
+ * Walk a block, skipping any nested/empty blocks and return a list of the
+ * top-level statements in the block in order. So for example for:
+ * ```
+ *  {{}}
+ *  i=0;
+ *  unchecked {{ i++; {} }}
+ *  i--;
+ *  {}
+ * ```
+ *
+ * This function will return [`i=0`, `i++`, `i--`]
+ */
+function linearizeStmts(nd: sol.Block | sol.UncheckedBlock): sol.Statement[] {
+    const res: sol.Statement[] = [];
+
+    for (const stmt of nd.vStatements) {
+        if (stmt instanceof sol.Block || stmt instanceof sol.UncheckedBlock) {
+            res.push(...linearizeStmts(stmt));
+        } else if (stmt instanceof sol.Statement) {
+            res.push(stmt);
+        }
+    }
+
+    return res;
+}
+
 function translateUnit(unit: sol.SourceUnit, infer: sol.InferType): string[] {
     const res: string[] = [];
 
     unit.walk((nd) => res.push(...translateNode(nd, infer)));
+
+    // Add firstStmt and nextStmt
+    unit.walk((nd) => {
+        if (!(nd instanceof sol.Block || nd instanceof sol.UncheckedBlock)) {
+            return;
+        }
+
+        const stmts = linearizeStmts(nd);
+
+        if (stmts.length > 0) {
+            res.push(`firstStmt(${nd.id}, ${stmts[0].id}).`);
+            res.push(`lastStmt(${nd.id}, ${stmts[stmts.length - 1].id}).`);
+        }
+
+        for (let i = 0; i < stmts.length - 1; i++) {
+            res.push(`nextStmt(${stmts[i].id}, ${stmts[i + 1].id}).`);
+        }
+    });
 
     return res;
 }
