@@ -1,5 +1,5 @@
-    .decl succ(prev: id, next: id) overridable
-    .decl succ_first(cId: id, fId: id) overridable
+    .decl succ(prev: id, next: id)
+    .decl succ_first(cId: id, fId: id)
 
     /// EXPRESSIONS
 
