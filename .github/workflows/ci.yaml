@@ -34,6 +34,7 @@ jobs:
             # See https://github.com/souffle-lang/souffle/releases
             - name: Install Soufflé
               run: |
+                  sudo apt update && sudo apt-install -y libffi7 mcpp
                   wget https://github.com/souffle-lang/souffle/releases/download/2.4.1/x86_64-ubuntu-2004-souffle-2.4.1-Linux.deb -O /tmp/souffle.deb
                   sudo dpkg -i /tmp/souffle.deb
                   souffle --version
