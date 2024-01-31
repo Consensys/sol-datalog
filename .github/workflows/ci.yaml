@@ -30,13 +30,6 @@ jobs:
                   node-version: ${{ matrix.node-version }}
                   cache: "npm"
 
-            - name: Install and lint
-              run: |
-                  npm install
-                  npm link
-                  npm run lint
-                  sol-ast-compile --version
-
             # See https://souffle-lang.github.io/source
             # See https://github.com/souffle-lang/souffle/releases
             - name: Install Soufflé
@@ -44,6 +37,13 @@ jobs:
                   wget https://github.com/souffle-lang/souffle/releases/download/2.4.1/x86_64-ubuntu-2004-souffle-2.4.1-Linux.deb -O /tmp/souffle.deb
                   sudo dpkg -i /tmp/souffle.deb
                   souffle --version
+
+            - name: Install and lint
+              run: |
+                  npm install
+                  npm link
+                  npm run lint
+                  sol-ast-compile --version
 
             # See https://github.com/ethereum/solc-bin
             # See https://binaries.soliditylang.org/
