@@ -38,7 +38,7 @@
         "@ts-ast-parser/core": "^0.7.0",
         "@types/fs-extra": "^11.0.4",
         "@types/mocha": "^10.0.6",
-        "@types/node": "^20.11.13",
+        "@types/node": "^20.11.14",
         "@types/sqlite3": "^3.1.11",
         "@typescript-eslint/eslint-plugin": "^6.20.0",
         "@typescript-eslint/parser": "^6.20.0",
