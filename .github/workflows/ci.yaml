@@ -53,13 +53,14 @@ jobs:
             - name: Install solc-typed-ast
               run: |
                   pwd
-                  echo $SOLC_TYPED_AST_DIR
+                  cd solc-typed-ast
                   pwd
-                  ls -la $SOLC_TYPED_AST_DIR
                   npm install
 
             - name: Install and lint
               run: |
+                  pwd
+                  cd main
                   pwd
                   npm install
                   npm link
