@@ -20,7 +20,7 @@ jobs:
         env:
             SOUFFLE_DEB: https://github.com/souffle-lang/souffle/releases/download/2.4.1/x86_64-ubuntu-2004-souffle-2.4.1-Linux.deb
             SOL_AST_COMPILER_CACHE: ${{ github.workspace }}/.compiler_cache
-            SOLC_TYPED_AST_DIR: ${{ github.workspace }}/../solc-typed-ast/src
+            SOLC_TYPED_AST_DIR: ${{ github.workspace }}/solc-typed-ast/src
 
         steps:
             - name: Checkout sol-datalog
@@ -39,6 +39,7 @@ jobs:
               with:
                   node-version: ${{ matrix.node-version }}
                   cache: "npm"
+                  cache-dependency-path: main/package-lock.json
 
             # See https://souffle-lang.github.io/source
             # See https://github.com/souffle-lang/souffle/releases
