@@ -52,16 +52,12 @@ jobs:
 
             - name: Install solc-typed-ast
               run: |
-                  pwd
                   cd solc-typed-ast
-                  pwd
                   npm install
 
             - name: Install and lint
               run: |
-                  pwd
                   cd main
-                  pwd
                   npm install
                   npm link
                   npm run lint
@@ -73,4 +69,6 @@ jobs:
               run: sol-datalog-cli --download-compilers native wasm
 
             - name: Test and generate coverage report
-              run: npm test
+              run: |
+                  cd main
+                  npm test
