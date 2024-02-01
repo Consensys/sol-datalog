@@ -26,7 +26,7 @@ jobs:
             - name: Checkout sol-datalog
               uses: actions/checkout@v4
               with:
-                  path: sol-datalog
+                  path: main
 
             - name: Checkout solc-typed-ast
               uses: actions/checkout@v4
