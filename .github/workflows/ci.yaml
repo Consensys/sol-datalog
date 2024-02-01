@@ -24,10 +24,10 @@ jobs:
             SOLC_TYPED_AST_DIR: ${{ github.workspace }}/../solc-typed-ast/src
 
         steps:
-            - name: Checkout
+            - name: Checkout sol-datalog
               uses: actions/checkout@v4
 
-            - name: Checkout
+            - name: Checkout solc-typed-ast
               uses: actions/checkout@v4
               with:
                   repository: ConsenSys/solc-typed-ast
@@ -48,10 +48,19 @@ jobs:
                   sudo dpkg -i /tmp/souffle.deb
                   souffle --version
 
-            - name: Install and lint
+            - name: Install solc-typed-ast
               run: |
+                  pwd
                   echo $SOLC_TYPED_AST_REPO
                   echo $SOLC_TYPED_AST_DIR
+                  cd $SOLC_TYPED_AST_REPO
+                  pwd
+                  ls -la $SOLC_TYPED_AST_DIR
+                  npm install
+
+            - name: Install and lint
+              run: |
+                  pwd
                   npm install
                   npm link
                   npm run lint
