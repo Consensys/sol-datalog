@@ -20,18 +20,19 @@ jobs:
         env:
             SOUFFLE_DEB: https://github.com/souffle-lang/souffle/releases/download/2.4.1/x86_64-ubuntu-2004-souffle-2.4.1-Linux.deb
             SOL_AST_COMPILER_CACHE: ${{ github.workspace }}/.compiler_cache
-            SOLC_TYPED_AST_REPO: ${{ github.workspace }}/../solc-typed-ast
             SOLC_TYPED_AST_DIR: ${{ github.workspace }}/../solc-typed-ast/src
 
         steps:
             - name: Checkout sol-datalog
               uses: actions/checkout@v4
+              with:
+                  path: sol-datalog
 
             - name: Checkout solc-typed-ast
               uses: actions/checkout@v4
               with:
                   repository: ConsenSys/solc-typed-ast
-                  path: $SOLC_TYPED_AST_REPO
+                  path: solc-typed-ast
 
             - name: Use NodeJS ${{ matrix.node-version }}
               uses: actions/setup-node@v4
@@ -51,9 +52,7 @@ jobs:
             - name: Install solc-typed-ast
               run: |
                   pwd
-                  echo $SOLC_TYPED_AST_REPO
                   echo $SOLC_TYPED_AST_DIR
-                  cd $SOLC_TYPED_AST_REPO
                   pwd
                   ls -la $SOLC_TYPED_AST_DIR
                   npm install
