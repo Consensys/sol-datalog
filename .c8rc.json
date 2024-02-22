@@ -3,6 +3,7 @@
     "exclude": [
         "**/*.d.ts",
         "**/node_modules/**",
+        "**/dist/**",
         "**/test/**",
         "**/coverage/**",
         "**/.compiler_cache/**",
