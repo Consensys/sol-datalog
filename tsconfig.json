@@ -26,5 +26,5 @@
     },
 
     "include": ["src/**/*"],
-    "exclude": ["src/lib/query/parser/query_header.ts"]
+    "exclude": ["src/lib/souffle/value_header.ts"]
 }
