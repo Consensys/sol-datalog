@@ -83,7 +83,7 @@ async function main() {
             "--download-compilers <compilerKind...>",
             `Download specified kind of supported compilers to compiler cache. Supports multiple entries.`
         )
-        .option("--run-detectors", "Run defined detecotrs")
+        .option("--run-detectors", "Run defined detectors")
         .option("--dump", "Dump generated DL")
         .option(
             "--dump-analyses <analysisName...>",
@@ -286,15 +286,17 @@ async function main() {
     const units = reader.read(result.data);
     const infer = new InferType(compilerVersion);
 
-    const datalog = buildDatalog(units, infer);
-
     if (options.dump) {
+        const datalog = buildDatalog(units, infer);
+
         console.log(datalog);
+
         return;
     }
 
     if (options.runDetectors) {
         const issues = await detect(units, reader.context, infer);
+
         console.log(issues);
 
         return;
@@ -308,6 +310,7 @@ async function main() {
             options.dumpAnalyses
         )) as SouffleCSVInstance;
         const output = instance.results();
+
         instance.release();
 
         for (const analysis of options.dumpAnalyses) {
@@ -315,6 +318,7 @@ async function main() {
 
             console.log(analysis, facts ? facts.map((f) => f.toCSVRow()) : facts);
         }
+
         return;
     }
 }

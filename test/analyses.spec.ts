@@ -19,29 +19,26 @@ describe("Analyses", () => {
         describe(sample, () => {
             let units: sol.SourceUnit[];
             let expectedOutput: OutputRelations;
-            let reader: sol.ASTReader;
             let version: string;
 
             before(async () => {
-                reader = new sol.ASTReader();
                 const result = await sol.compileSol(sample, "auto");
 
                 const data = result.data;
                 const errors = sol.detectCompileErrors(data);
 
                 expect(errors).toHaveLength(0);
+
                 version = result.compilerVersion as string;
 
-                units = reader.read(data);
+                units = new sol.ASTReader().read(data);
 
                 expect(units.length).toBeGreaterThanOrEqual(1);
 
-                expectedOutput = fse.readJSONSync(json, {
-                    encoding: "utf-8"
-                }) as OutputRelations;
+                expectedOutput = fse.readJSONSync(json, { encoding: "utf-8" });
             });
 
-            it("Detectors produce expected results", async () => {
+            it("Analyses produce expected results", async () => {
                 const targetAnalyses = [...Object.keys(expectedOutput)];
                 const infer = new sol.InferType(version);
                 const instance = (await analyze(
@@ -51,8 +48,15 @@ describe("Analyses", () => {
                     targetAnalyses,
                     DIST_SO_DIR
                 )) as SouffleCSVInstance;
+
                 const analysisResults = instance.results();
+
                 instance.release();
+
+                // await fse.writeFile(
+                //     json,
+                //     JSON.stringify(Object.fromEntries(analysisResults.entries()), undefined, 4)
+                // );
 
                 for (const [key, val] of Object.entries(expectedOutput)) {
                     expect(
@@ -71,11 +75,9 @@ describe("Analyses work in sqlite mode", () => {
     describe(sample, () => {
         let units: sol.SourceUnit[];
         let expectedOutput: OutputRelations;
-        let reader: sol.ASTReader;
         let version: string;
 
         before(async () => {
-            reader = new sol.ASTReader();
             const result = await sol.compileSol(sample, "auto");
 
             const data = result.data;
@@ -84,7 +86,7 @@ describe("Analyses work in sqlite mode", () => {
             expect(errors).toHaveLength(0);
 
             version = result.compilerVersion as string;
-            units = reader.read(data);
+            units = new sol.ASTReader().read(data);
 
             expect(units.length).toBeGreaterThanOrEqual(1);
 
@@ -93,7 +95,7 @@ describe("Analyses work in sqlite mode", () => {
             }) as OutputRelations;
         });
 
-        it("Detectors produce expected results", async () => {
+        it("Analyses produce expected results", async () => {
             const targetAnalyses = [...Object.keys(expectedOutput)];
             const infer = new sol.InferType(version);
             const instance = (await analyze(
@@ -105,6 +107,7 @@ describe("Analyses work in sqlite mode", () => {
 
             for (const [key, val] of Object.entries(expectedOutput)) {
                 const actualResutls = (await instance.relationFacts(key)).map((f) => f.fields);
+
                 expect(actualResutls).toEqual(val);
             }
 

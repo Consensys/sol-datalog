@@ -30,7 +30,7 @@ export interface Issue {
 }
 
 function loadDetectorTemplate(jsonPath: string): DetectorTemplate {
-    return fse.readJSONSync(jsonPath) as DetectorTemplate;
+    return fse.readJSONSync(jsonPath);
 }
 
 export function loadDetectors(): DetectorTemplate[] {
@@ -135,10 +135,12 @@ function fmt(template: string, subst: SubstMap, ctx: sol.ASTContext): string {
             const fieldVal = getField(node, field);
 
             template = template.replace(fmtHoleRx, sol.pp(fieldVal));
+
             continue;
         }
 
         m1 = pattern.match(fmtId);
+
         if (m1 !== null) {
             const argName = m1[1];
             const val = subst.get(argName);
@@ -147,6 +149,7 @@ function fmt(template: string, subst: SubstMap, ctx: sol.ASTContext): string {
 
             sol.assert(!(typeof val === "object"), ``);
             template = template.replace(fmtHoleRx, sol.pp(val));
+
             continue;
         }
 
@@ -169,11 +172,14 @@ export function getIssues(output: OutputRelations, ctx: sol.ASTContext): Issue[]
 
     // Parse results
     for (const [name, facts] of output) {
-        if (!detectorMap.has(name)) {
+        const entry = detectorMap.get(name);
+
+        if (entry === undefined) {
             continue;
         }
 
-        const [args, template] = detectorMap.get(name) as [SignatureArgs, DetectorTemplate];
+        const [args, template] = entry;
+
         for (const relnVals of facts) {
             const subst = makeSubst(args, relnVals);
 

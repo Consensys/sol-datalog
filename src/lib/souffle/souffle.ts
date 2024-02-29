@@ -59,6 +59,7 @@ export async function analyze(
             : new SouffleSQLiteInstance(datalog, soDir);
 
     await instance.run(outputRelations);
+
     return instance;
 }
 
@@ -77,6 +78,7 @@ export async function detect(
 
     const instance = (await analyze(units, infer, "csv", outputRelations)) as SouffleCSVInstance;
     const outputs = instance.results();
+
     instance.release();
 
     const res = getIssues(outputs, context);
