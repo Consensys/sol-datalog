@@ -461,7 +461,7 @@ qualified_name
 type_decl
   : TYPE IDENT SUBTYPE qualified_name
     {
-      $$ = new ast.SubsetType($2, $4, @$);
+      $$ = new ast.SubsetType($2, new ast.NamedType($4, @4), @$);
     }
   | TYPE IDENT EQUALS union_type_list
     {
@@ -510,12 +510,12 @@ record_type_list
 union_type_list
   : qualified_name
     {
-      $$ = [$1];
+      $$ = [new ast.NamedType($1, @1)];
     }
   | union_type_list PIPE qualified_name
     {
       $$ = $1;
-      $$.push($3);
+      $$.push(new ast.NamedType($3, @3));
     }
   ;
 

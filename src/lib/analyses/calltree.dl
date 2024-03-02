@@ -8,7 +8,7 @@ callsDirectly(caller, callee) :-
     ancestor(caller, callId).
 
 .type CallPath = [ head: FunctionDefinitionId, tail: CallPath ]
-.functor isSubsequence(CallPath, CallPath):number stateful
+.functor isSubsequence(a: CallPath, b: CallPath):number stateful
 
 .decl callsPath(caller: FunctionDefinitionId, callee: FunctionDefinitionId, path: CallPath)
 

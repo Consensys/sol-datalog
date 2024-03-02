@@ -16,9 +16,10 @@
         "gen-translation-modules": "node scripts/gen_translation_modules.js && eslint --fix src/gen/translate.ts src/gen/declarations.ts",
         "copy-dl": "cp -r src/lib/analyses dist/lib && cp -r src/lib/detectors dist/lib",
         "copy-functors": "cp -r functors dist/",
-        "build-parser": "tspegjs -o src/lib/souffle/value_parser.ts  --custom-header-file src/lib/souffle/value_header.ts --allowed-start-rules Value --cache src/lib/souffle/values.pegjs",
+        "build-parser": "jison src/lib/souffle/parser/souffle.jison -o src/lib/souffle/parser/souffle_parser_gen.js -m commonjs && cp src/lib/souffle/parser/souffle_parser_gen.js dist/lib/souffle/parser/souffle_parser_gen.js",
+        "build-value-parser": "tspegjs -o src/lib/souffle/value_parser.ts  --custom-header-file src/lib/souffle/value_header.ts --allowed-start-rules Value --cache src/lib/souffle/values.pegjs",
         "build-functors": "./scripts/build_functors.sh",
-        "build": "npm run clean && npm run gen-translation-modules && npm run build-parser && npm run transpile && chmod a+x dist/bin/cli.js && npm run copy-dl && npm run build-functors && npm run copy-functors",
+        "build": "npm run clean && npm run gen-translation-modules && npm run build-value-parser && npm run transpile && npm run build-parser && chmod a+x dist/bin/cli.js && npm run copy-dl && npm run build-functors && npm run copy-functors",
         "test": "c8 mocha",
         "lint": "eslint src/ test/ --ext=ts",
         "lint:fix": "eslint src/ test/ --ext=ts --fix",
@@ -51,8 +52,7 @@
         "prettier": "3.2.5",
         "ts-node": "^10.9.2",
         "typescript": "^5.3.3",
-        "peggy": "^2.0.1",
-        "ts-pegjs": "^3.1.0"
+        "jison": "^0.4.18"
     },
     "repository": {
         "type": "git",

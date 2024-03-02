@@ -1,6 +1,5 @@
-import { DatalogType, TypeEnv, mustLookupType } from "./types";
-
-const declRX = /\.decl *([a-zA-Z0-9_]*) *\(([^)]*)\)/g;
+import { DatalogType, TypeEnv } from "./types";
+import * as ast from "./ast";
 
 export class Relation {
     constructor(
@@ -9,21 +8,21 @@ export class Relation {
     ) {}
 }
 
-export function getRelations(dl: string, env: TypeEnv): Relation[] {
+export function getRelations(prog: ast.Program, env: TypeEnv): Relation[] {
     const res: Relation[] = [];
 
-    for (const m of dl.matchAll(declRX)) {
-        const name = m[1];
-        const args = (
-            m[2]
-                .split(",")
-                .map((x) => x.trim())
-                .map((x) => x.split(":")) as Array<[string, string]>
-        ).map(([name, rawT]) => [name.trim(), mustLookupType(rawT.trim(), env)]) as Array<
-            [string, DatalogType]
-        >;
-
-        res.push(new Relation(name, args));
+    for (const d of prog) {
+        if (d instanceof ast.Relation) {
+            res.push(
+                new Relation(
+                    d.name,
+                    d.args.map(([name, typ]) => [
+                        name,
+                        env.mustLookupType((typ as ast.NamedType).name)
+                    ])
+                )
+            );
+        }
     }
 
     return res;

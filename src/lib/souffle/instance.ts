@@ -8,17 +8,11 @@ import { chunk, searchRecursive } from "../utils";
 import { parse } from "csv-parse/sync";
 import sqlite3 from "sqlite3";
 import { open, Database } from "sqlite";
-import {
-    DatalogNumber,
-    DatalogRecordType,
-    DatalogSubtype,
-    DatalogSymbol,
-    DatalogType,
-    TypeEnv,
-    buildTypeEnv
-} from "./types";
+import { NumberT, RecordT, SubT, SymbolT, DatalogType, TypeEnv, AliasT } from "./types";
 import { Relation, getRelations } from "./relation";
 import { Fact, FieldVal, ppFieldVal } from "./fact";
+import * as ast from "./ast";
+import { parseProgram } from "./parser";
 
 export type SouffleOutputType = "csv" | "sqlite";
 
@@ -47,6 +41,7 @@ export abstract class SouffleInstance {
     protected env: TypeEnv;
     protected _relations: Map<string, Relation>;
     protected soDir: string;
+    protected program: ast.Program;
 
     constructor(
         private readonly datalog: string,
@@ -55,8 +50,9 @@ export abstract class SouffleInstance {
     ) {
         this.success = false;
 
-        this.env = buildTypeEnv(this.datalog);
-        this._relations = new Map(getRelations(this.datalog, this.env).map((r) => [r.name, r]));
+        this.program = parseProgram(this.datalog);
+        this.env = TypeEnv.buildTypeEnv(this.program);
+        this._relations = new Map(getRelations(this.program, this.env).map((r) => [r.name, r]));
 
         this.soDir = soDir ? soDir : DEFAULT_SO_DIR;
     }
@@ -176,19 +172,23 @@ export class SouffleCSVInstance extends BaseSouffleCSVInstance implements Souffl
 }
 
 function datalogToSQLType(typ: DatalogType): string {
-    if (typ === DatalogNumber) {
+    if (typ === NumberT) {
         return "INTEGER";
     }
 
-    if (typ === DatalogSymbol) {
+    if (typ === SymbolT) {
         return "TEXT";
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return datalogToSQLType(typ.baseType());
+    if (typ instanceof SubT) {
+        return datalogToSQLType(typ.parentT);
     }
 
-    if (typ instanceof DatalogRecordType) {
+    if (typ instanceof AliasT) {
+        return datalogToSQLType(typ.originalT);
+    }
+
+    if (typ instanceof RecordT) {
         return "TEXT";
     }
 
@@ -196,15 +196,19 @@ function datalogToSQLType(typ: DatalogType): string {
 }
 
 function fieldValToSQLVal(val: FieldVal, typ: DatalogType): string {
-    if (typ === DatalogNumber) {
+    if (typ === NumberT) {
         return ppFieldVal(val, typ);
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return fieldValToSQLVal(val, typ.baseType());
+    if (typ instanceof SubT) {
+        return fieldValToSQLVal(val, typ.parentT);
     }
 
-    if (typ === DatalogSymbol || typ instanceof DatalogRecordType) {
+    if (typ instanceof AliasT) {
+        return fieldValToSQLVal(val, typ.originalT);
+    }
+
+    if (typ === SymbolT || typ instanceof RecordT) {
         return `"${ppFieldVal(val, typ)}"`;
     }
 

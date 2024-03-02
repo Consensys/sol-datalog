@@ -1,27 +1,27 @@
 import * as sol from "solc-typed-ast";
 import { Relation } from "./relation";
-import {
-    DatalogRecordType,
-    DatalogSubtype,
-    DatalogType,
-    DatalogNumber,
-    DatalogSymbol
-} from "./types";
+import { RecordT, SubT, DatalogType, NumberT, SymbolT, AliasT } from "./types";
 import { ParsedFieldVal, parseValue } from "./value_parser";
 import { zip } from "../utils";
 
 export type FieldVal = string | number | bigint | { [field: string]: FieldVal } | null;
 
+// TODO: A lot of functions with very similar structure. Code duplication probably here
+
 function fieldValToJSON(val: FieldVal, typ: DatalogType): any {
-    if (typ === DatalogSymbol || typ == DatalogNumber) {
+    if (typ === SymbolT || typ == NumberT) {
         return val;
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return fieldValToJSON(val, typ.baseType());
+    if (typ instanceof SubT) {
+        return fieldValToJSON(val, typ.parentT);
     }
 
-    if (typ instanceof DatalogRecordType) {
+    if (typ instanceof AliasT) {
+        return fieldValToJSON(val, typ.originalT);
+    }
+
+    if (typ instanceof RecordT) {
         if (val === null) {
             return null;
         }
@@ -34,19 +34,23 @@ function fieldValToJSON(val: FieldVal, typ: DatalogType): any {
 }
 
 export function ppFieldVal(val: FieldVal, typ: DatalogType): string {
-    if (typ === DatalogSymbol) {
+    if (typ === SymbolT) {
         return val as string;
     }
 
-    if (typ === DatalogNumber) {
+    if (typ === NumberT) {
         return `${val as number | bigint}`;
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return ppFieldVal(val, typ.baseType());
+    if (typ instanceof SubT) {
+        return ppFieldVal(val, typ.parentT);
     }
 
-    if (typ instanceof DatalogRecordType) {
+    if (typ instanceof AliasT) {
+        return ppFieldVal(val, typ.originalT);
+    }
+
+    if (typ instanceof RecordT) {
         if (val === null) {
             return `nil`;
         }
@@ -59,7 +63,7 @@ export function ppFieldVal(val: FieldVal, typ: DatalogType): string {
 }
 
 export function translateVal(raw: ParsedFieldVal, typ: DatalogType): FieldVal {
-    if (typ === DatalogNumber) {
+    if (typ === NumberT) {
         sol.assert(
             typeof raw === "number",
             `Expected a number when translating a number, not {0}`,
@@ -68,16 +72,20 @@ export function translateVal(raw: ParsedFieldVal, typ: DatalogType): FieldVal {
         return raw;
     }
 
-    if (typ === DatalogSymbol) {
+    if (typ === SymbolT) {
         sol.assert(typeof raw === "string", `Expected a string when translating a symbol`);
         return raw;
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return translateVal(raw, typ.baseType());
+    if (typ instanceof SubT) {
+        return translateVal(raw, typ.parentT);
     }
 
-    if (typ instanceof DatalogRecordType) {
+    if (typ instanceof AliasT) {
+        return translateVal(raw, typ.originalT);
+    }
+
+    if (typ instanceof RecordT) {
         if (raw === null) {
             return null;
         }
@@ -96,20 +104,24 @@ export function translateVal(raw: ParsedFieldVal, typ: DatalogType): FieldVal {
 }
 
 function parseFieldValFromCsv(val: any, typ: DatalogType): FieldVal {
-    if (typ === DatalogNumber) {
+    if (typ === NumberT) {
         sol.assert(typeof val === "number", `Expected a number`);
         return val;
     }
 
-    if (typ === DatalogSymbol) {
+    if (typ === SymbolT) {
         return String(val);
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return parseFieldValFromCsv(val, typ.baseType());
+    if (typ instanceof SubT) {
+        return parseFieldValFromCsv(val, typ.parentT);
     }
 
-    if (typ instanceof DatalogRecordType) {
+    if (typ instanceof AliasT) {
+        return parseFieldValFromCsv(val, typ.originalT);
+    }
+
+    if (typ instanceof RecordT) {
         sol.assert(typeof val === "string", `Expected a string`);
         return translateVal(parseValue(val), typ);
     }
@@ -118,21 +130,25 @@ function parseFieldValFromCsv(val: any, typ: DatalogType): FieldVal {
 }
 
 function parseFieldValFromSQL(val: any, typ: DatalogType): FieldVal {
-    if (typ === DatalogNumber) {
+    if (typ === NumberT) {
         sol.assert(typeof val === "number", `Expected a number`);
         return val;
     }
 
-    if (typ === DatalogSymbol) {
+    if (typ === SymbolT) {
         sol.assert(typeof val === "string", `Expected a string`);
         return val;
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return parseFieldValFromCsv(val, typ.baseType());
+    if (typ instanceof SubT) {
+        return parseFieldValFromCsv(val, typ.parentT);
     }
 
-    if (typ instanceof DatalogRecordType) {
+    if (typ instanceof AliasT) {
+        return parseFieldValFromCsv(val, typ.originalT);
+    }
+
+    if (typ instanceof RecordT) {
         if (typeof val === "string") {
             return translateVal(parseValue(val), typ);
         }
@@ -158,15 +174,11 @@ export class Fact {
     }
 
     static fromCSVRow(rel: Relation, cols: string[]): Fact {
-        const primitiveTypes = rel.fields.map(([, typ]) =>
-            typ instanceof DatalogSubtype ? typ.baseType() : typ
-        );
-
-        sol.assert(cols.length === primitiveTypes.length, ``);
+        sol.assert(cols.length === rel.fields.length, ``);
 
         return new Fact(
             rel,
-            cols.map((val, idx) => parseFieldValFromCsv(val, primitiveTypes[idx]))
+            cols.map((val, idx) => parseFieldValFromCsv(val, rel.fields[idx][1]))
         );
     }
 
