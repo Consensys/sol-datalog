@@ -26,5 +26,5 @@
     },
 
     "include": ["src/**/*"],
-    "exclude": ["src/lib/souffle/value_header.ts"]
+    "exclude": []
 }
