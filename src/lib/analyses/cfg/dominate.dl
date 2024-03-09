@@ -76,8 +76,8 @@ dominate(pred, succ) :-
 /// TupleExpression
 dominate(pred, succ) :-
     TupleExpression(tId),
-    TupleExpression_components(tId, pred, i),
-    TupleExpression_components(tId, succ, i + 1).
+    TupleExpression_components(tId, pred, i, _),
+    TupleExpression_components(tId, succ, i + 1, _).
 
 /// Domination is transitive
 dominate(pred, succ) :- dominate(pred, x), dominate(x, succ).

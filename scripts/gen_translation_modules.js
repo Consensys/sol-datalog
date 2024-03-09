@@ -114,7 +114,7 @@ const staticPreamble = `
 .decl ContractDefinition_linearizedBaseContracts(parentId: ContractDefinitionId, childId: ContractDefinitionId, idx: number)
 .decl ContractDefinition_usedErrors(parentId: ContractDefinitionId, childId: ErrorDefinitionId, idx: number)
 .decl ContractDefinition_usedEvents(parentId: ContractDefinitionId, childId: EventDefinitionId, idx: number)
-.decl TupleExpression_components(parentId: TupleExpressionId, childId: ExpressionId, idx: number)
+.decl TupleExpression_components(parentId: TupleExpressionId, childId: ExpressionId, idx: number, realIdx: number)
 .decl FunctionDefinition_modifiers(parentId: FunctionDefinitionId, childId: ModifierInvocationId, idx: number)
 .decl FunctionCall_arguments(parentId: FunctionCallId, childId: ExpressionId, idx: number)
 .decl TryStatement_clauses(parentId: TryStatementId, childId: TryCatchClauseId, idx: number)
@@ -127,7 +127,7 @@ const staticPreamble = `
 .decl UsingForDirective_functionList(parentId: UsingForDirectiveId, childId: IdentifierPathId, operator: symbol, idx: number)
 .decl StructDefinition_members(parentId: StructDefinitionId, childId: VariableDeclarationId, idx: number)
 .decl EnumDefinition_members(parentId: EnumDefinitionId, childId: EnumValueId, idx: number)
-.decl VariableDeclarationStatement_assignments(parentId: VariableDeclarationStatementId, childId: VariableDeclarationId, idx: number)
+.decl VariableDeclarationStatement_assignments(parentId: VariableDeclarationStatementId, childId: VariableDeclarationId, idx: number, realIdx: number)
 .decl OverrideSpecifier_overrides(parentId: OverrideSpecifierId, childId: id, idx: number)
 
 .decl FunctionCall_fieldNames(parentId: FunctionCallId, name: symbol, idx: number)
@@ -739,6 +739,32 @@ function buildFactInvocation(className, constructor, baseName) {
     }
 `;
     }
+    // Add relations for sparse array arguments
+    for (let [paramName, ,] of params.slice(2)) {
+        const canonicalParamName = getCanonicalParamName(className, paramName);
+        if (
+            !(
+                (className === "TupleExpression" && canonicalParamName === "components") ||
+                (className === "VariableDeclarationStatement" &&
+                    canonicalParamName === "assignments")
+            )
+        ) {
+            continue;
+        }
+
+        res += `
+    for (let realI = 0, i = 0; realI < nd.${canonicalParamName}.length; realI++) {
+        let t = nd.${canonicalParamName}[realI];
+
+        if (t === null || t === undefined) {
+            continue;
+        }
+
+        res.push(\`${className}_${paramName}(\${nd.id}, \${t}, \${i}, \${realI}).\`);
+        i++;
+    }
+`;
+    }
 
     // Add relations for array arguments
     for (let [paramName, optional, type] of params.slice(2)) {
@@ -751,6 +777,14 @@ function buildFactInvocation(className, constructor, baseName) {
         }
 
         const canonicalParamName = getCanonicalParamName(className, paramName);
+
+        // Skip sparse arrays. We need special logic for them
+        if (
+            (className === "TupleExpression" && canonicalParamName === "components") ||
+            (className === "VariableDeclarationStatement" && canonicalParamName === "assignments")
+        ) {
+            continue;
+        }
 
         const args = [`\${nd.id}`];
 

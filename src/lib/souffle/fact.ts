@@ -1,32 +1,109 @@
 import * as sol from "solc-typed-ast";
 import { Relation } from "./relation";
-import {
-    DatalogRecordType,
-    DatalogSubtype,
-    DatalogType,
-    DatalogNumber,
-    DatalogSymbol
-} from "./types";
-import { ParsedFieldVal, parseValue } from "./value_parser";
-import { zip } from "../utils";
+import { RecordT, SubT, DatalogType, NumberT, SymbolT, AliasT, ADTT } from "./types";
+import { parseExpression } from "./parser";
+import * as ast from "./ast";
 
-export type FieldVal = string | number | bigint | { [field: string]: FieldVal } | null;
+function getBranch(typ: ADTT, branch: string): [string, Array<[string, DatalogType]>] {
+    const filtered = typ.branches.filter(([name]) => name === branch);
+    sol.assert(
+        filtered.length === 1,
+        `Couldn't find branch hamed {0} in ADT {1}`,
+        branch,
+        typ.name
+    );
+
+    return filtered[0];
+}
+
+/**
+ * Convert a literal Expression AST to a FieldVal.
+ */
+function literalExprToVal(expr: ast.Expression, typ: DatalogType): FieldVal {
+    if (expr instanceof ast.Num) {
+        return expr.value;
+    }
+
+    if (expr instanceof ast.StringLiteral) {
+        return expr.value;
+    }
+
+    if (expr instanceof ast.Nil) {
+        sol.assert(typ instanceof RecordT, ``);
+        return null;
+    }
+
+    if (expr instanceof ast.RecordLiteral) {
+        sol.assert(typ instanceof RecordT, ``);
+        sol.assert(typ.fields.length === expr.args.length, ``);
+
+        return Object.fromEntries(
+            expr.args.map((_, i) => [
+                typ.fields[i][0],
+                literalExprToVal(expr.args[i], typ.fields[i][1])
+            ])
+        );
+    }
+
+    if (expr instanceof ast.ADTLiteral) {
+        sol.assert(typ instanceof ADTT, ``);
+        const branchT = getBranch(typ, expr.branch);
+
+        return [
+            expr.branch,
+            Object.fromEntries(
+                expr.args.map((_, i) => [
+                    branchT[1][i][0],
+                    literalExprToVal(expr.args[i], branchT[1][i][1])
+                ])
+            )
+        ];
+    }
+
+    throw new Error(`NYI translating ${expr.pp()} of type ${typ.name} to FieldVal`);
+}
+
+export function parseValueInt(source: string, typ: DatalogType): FieldVal {
+    return literalExprToVal(parseExpression(source), typ);
+}
+
+export type RecordVal = { [field: string]: FieldVal };
+export type ADTVal = [string, RecordVal];
+export type FieldVal = string | bigint | number | RecordVal | ADTVal | null;
+
+function isADT(v: FieldVal): v is ADTVal {
+    return v instanceof Array;
+}
+
+function isRecord(v: FieldVal): v is RecordVal {
+    return v instanceof Object && !isADT(v);
+}
+
+// TODO: A lot of functions with very similar structure. Code duplication probably here
 
 function fieldValToJSON(val: FieldVal, typ: DatalogType): any {
-    if (typ === DatalogSymbol || typ == DatalogNumber) {
+    if (typ === SymbolT) {
         return val;
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return fieldValToJSON(val, typ.baseType());
+    if (typ == NumberT) {
+        return Number(val);
     }
 
-    if (typ instanceof DatalogRecordType) {
+    if (typ instanceof SubT) {
+        return fieldValToJSON(val, typ.parentT);
+    }
+
+    if (typ instanceof AliasT) {
+        return fieldValToJSON(val, typ.originalT);
+    }
+
+    if (typ instanceof RecordT) {
         if (val === null) {
             return null;
         }
 
-        sol.assert(val instanceof Object, `Expected an object in fieldValToJSON, not ${val}`);
+        sol.assert(isRecord(val), `Expected a Record in fieldValToJSON, not ${val}`);
         return typ.fields.map(([name, fieldT]) => fieldValToJSON(val[name], fieldT));
     }
 
@@ -34,107 +111,82 @@ function fieldValToJSON(val: FieldVal, typ: DatalogType): any {
 }
 
 export function ppFieldVal(val: FieldVal, typ: DatalogType): string {
-    if (typ === DatalogSymbol) {
+    if (typ === SymbolT) {
         return val as string;
     }
 
-    if (typ === DatalogNumber) {
+    if (typ === NumberT) {
         return `${val as number | bigint}`;
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return ppFieldVal(val, typ.baseType());
+    if (typ instanceof SubT) {
+        return ppFieldVal(val, typ.parentT);
     }
 
-    if (typ instanceof DatalogRecordType) {
+    if (typ instanceof AliasT) {
+        return ppFieldVal(val, typ.originalT);
+    }
+
+    if (typ instanceof RecordT) {
         if (val === null) {
             return `nil`;
         }
 
-        sol.assert(val instanceof Object, `Expected an object in ppFieldVal`);
+        sol.assert(isRecord(val), `Expected an object in ppFieldVal`);
         return `[${typ.fields.map(([name, fieldT]) => ppFieldVal(val[name], fieldT)).join(", ")}]`;
     }
 
     throw new Error(`NYI type ${typ.name}`);
 }
 
-export function translateVal(raw: ParsedFieldVal, typ: DatalogType): FieldVal {
-    if (typ === DatalogNumber) {
-        sol.assert(
-            typeof raw === "number",
-            `Expected a number when translating a number, not {0}`,
-            typeof raw
-        );
-        return raw;
-    }
-
-    if (typ === DatalogSymbol) {
-        sol.assert(typeof raw === "string", `Expected a string when translating a symbol`);
-        return raw;
-    }
-
-    if (typ instanceof DatalogSubtype) {
-        return translateVal(raw, typ.baseType());
-    }
-
-    if (typ instanceof DatalogRecordType) {
-        if (raw === null) {
-            return null;
-        }
-
-        sol.assert(raw instanceof Array && raw.length === typ.fields.length, ``);
-
-        return Object.fromEntries(
-            zip(
-                typ.fields.map((x) => x[0]),
-                raw.map((x, i) => translateVal(x, typ.fields[i][1]))
-            )
-        );
-    }
-
-    throw new Error(`NYI type ${typ.name}`);
-}
-
 function parseFieldValFromCsv(val: any, typ: DatalogType): FieldVal {
-    if (typ === DatalogNumber) {
+    if (typ === NumberT) {
         sol.assert(typeof val === "number", `Expected a number`);
         return val;
     }
 
-    if (typ === DatalogSymbol) {
+    if (typ === SymbolT) {
         return String(val);
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return parseFieldValFromCsv(val, typ.baseType());
+    if (typ instanceof SubT) {
+        return parseFieldValFromCsv(val, typ.parentT);
     }
 
-    if (typ instanceof DatalogRecordType) {
+    if (typ instanceof AliasT) {
+        return parseFieldValFromCsv(val, typ.originalT);
+    }
+
+    if (typ instanceof RecordT) {
         sol.assert(typeof val === "string", `Expected a string`);
-        return translateVal(parseValue(val), typ);
+        return parseValueInt(val, typ);
     }
 
     throw new Error(`NYI datalog type ${typ}`);
 }
 
 function parseFieldValFromSQL(val: any, typ: DatalogType): FieldVal {
-    if (typ === DatalogNumber) {
+    if (typ === NumberT) {
         sol.assert(typeof val === "number", `Expected a number`);
         return val;
     }
 
-    if (typ === DatalogSymbol) {
+    if (typ === SymbolT) {
         sol.assert(typeof val === "string", `Expected a string`);
         return val;
     }
 
-    if (typ instanceof DatalogSubtype) {
-        return parseFieldValFromCsv(val, typ.baseType());
+    if (typ instanceof SubT) {
+        return parseFieldValFromCsv(val, typ.parentT);
     }
 
-    if (typ instanceof DatalogRecordType) {
+    if (typ instanceof AliasT) {
+        return parseFieldValFromCsv(val, typ.originalT);
+    }
+
+    if (typ instanceof RecordT) {
         if (typeof val === "string") {
-            return translateVal(parseValue(val), typ);
+            return parseValueInt(val, typ);
         }
 
         throw new Error(`NYI parsing record types from ${val}`);
@@ -158,15 +210,11 @@ export class Fact {
     }
 
     static fromCSVRow(rel: Relation, cols: string[]): Fact {
-        const primitiveTypes = rel.fields.map(([, typ]) =>
-            typ instanceof DatalogSubtype ? typ.baseType() : typ
-        );
-
-        sol.assert(cols.length === primitiveTypes.length, ``);
+        sol.assert(cols.length === rel.fields.length, ``);
 
         return new Fact(
             rel,
-            cols.map((val, idx) => parseFieldValFromCsv(val, primitiveTypes[idx]))
+            cols.map((val, idx) => parseFieldValFromCsv(val, rel.fields[idx][1]))
         );
     }
 

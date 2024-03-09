@@ -27,7 +27,7 @@ stateVarModifiedInLHS(varId, exprId) :-
 stateVarModifiedInLHS(varId, exprId) :-
     TupleExpression(exprId), 
     TupleExpression_isInlineArray(exprId, 0),
-    TupleExpression_components(exprId, componentId, _),
+    TupleExpression_components(exprId, componentId, _, _),
     componentId >= 0,
     stateVarModifiedInLHS(varId, componentId).
 
