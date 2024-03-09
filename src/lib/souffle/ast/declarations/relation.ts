@@ -40,7 +40,7 @@ export class Relation extends Declaration {
 
         return `${indent}.decl ${this.name}(${this.args
             .map((a) => `${a[0]}: ${a[1].pp()}`)
-            .join(", ")}) ${[...this.tags].join(" ")}${
+            .join(", ")}) ${[...this.tags].join(" ") + " "}${
             choiceStrs.length > 0 ? `choice-domain ${choiceStrs.join(", ")}` : ""
         }`;
     }
@@ -50,6 +50,8 @@ export class Relation extends Declaration {
     }
 
     getStructId(): any {
-        return [this.name, ...this.args, [...this.tags], this.choiceDomains];
+        const tags = [...this.tags];
+        tags.sort();
+        return [this.name, this.args, tags, this.choiceDomains];
     }
 }

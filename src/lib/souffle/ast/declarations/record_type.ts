@@ -22,6 +22,6 @@ export class RecordType extends Declaration {
     }
 
     getStructId(): any {
-        return [this.name, ...this.fields];
+        return [this.name, this.fields];
     }
 }

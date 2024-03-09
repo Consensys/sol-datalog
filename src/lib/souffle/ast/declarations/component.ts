@@ -18,10 +18,12 @@ export class Component extends Declaration {
     }
 
     pp(indent: string = ""): string {
+        const innerIndent = indent + "    ";
+
         return `${indent}.comp ${Component.ppCompInv([this.name, this.typeParams])}${
-            this.bases.length ? 0 : this.bases.map(Component.ppCompInv).join(", ")
+            this.bases.length == 0 ? "" : ":" + this.bases.map(Component.ppCompInv).join(", ")
         } {
-            ${this.body.map((x) => x.pp(indent + "    ")).join("\n")}
+            ${this.body.map((x) => x.pp(innerIndent)).join("\n")}
         }`;
     }
 
@@ -30,6 +32,6 @@ export class Component extends Declaration {
     }
 
     getStructId(): any {
-        return [this.name, ...this.typeParams, ...this.bases, ...this.body];
+        return [this.name, this.typeParams, this.bases, this.body];
     }
 }

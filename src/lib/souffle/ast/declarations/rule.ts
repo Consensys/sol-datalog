@@ -19,7 +19,7 @@ export class Rule extends Declaration {
         let queryPlanStr = "";
 
         if (this.queryPlan.length > 0) {
-            queryPlanStr += ".plan";
+            queryPlanStr += " .plan";
             queryPlanStr += this.queryPlan
                 .map(([num, nums]) => `${num}: (${nums.map((x) => `${x}`).join(", ")})`)
                 .join(", ");

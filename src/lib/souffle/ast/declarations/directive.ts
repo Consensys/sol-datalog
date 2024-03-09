@@ -13,9 +13,11 @@ export class Directive extends Declaration {
     }
 
     pp(indent: string = ""): string {
-        return `${indent}${this.type} ${this.name}(${this.parameters
-            .map(([name, val]) => `${name} = ${val}`)
-            .join(", ")})`;
+        const paramStr = this.parameters
+            .map(([name, val]) => `${name} = ${typeof val === "string" ? `"${val}"` : val}`)
+            .join(", ");
+
+        return `${indent}${this.type} ${this.name}${paramStr.length > 0 ? `(${paramStr})` : ""}`;
     }
 
     children(): Iterable<Node> {
@@ -23,6 +25,6 @@ export class Directive extends Declaration {
     }
 
     getStructId(): any {
-        return [this.type, this.name, ...this.parameters];
+        return [this.type, this.name, this.parameters];
     }
 }

@@ -13,9 +13,9 @@ export class AlgebraicDataType extends Declaration {
     }
 
     pp(indent: string = ""): string {
-        return `${indent}.type ${this.name} = [${this.branches
+        return `${indent}.type ${this.name} = ${this.branches
             .map((b) => `${b[0]} {${b[1].map((f) => `${f[0]}: ${f[1].pp()}`).join(", ")}}`)
-            .join(" | ")}]`;
+            .join(" | ")}`;
     }
 
     children(): Iterable<Node> {

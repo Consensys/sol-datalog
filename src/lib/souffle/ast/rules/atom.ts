@@ -19,6 +19,6 @@ export class Atom extends Node {
     }
 
     getStructId(): any {
-        return [this.name, ...this.args];
+        return [this.name, this.args];
     }
 }

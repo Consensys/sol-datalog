@@ -1,7 +1,22 @@
 import { Node, Src } from "../node";
 import { Expression } from "./expression";
 
-export type BinaryOp = "+";
+export type BinaryOp =
+    | "+"
+    | "-"
+    | "*"
+    | "/"
+    | "%"
+    | "^"
+    | "land"
+    | "lor"
+    | "lxor"
+    | "band"
+    | "bor"
+    | "bxor"
+    | "bshl"
+    | "bshr"
+    | "bshru";
 
 export class BinaryOperator extends Expression {
     constructor(

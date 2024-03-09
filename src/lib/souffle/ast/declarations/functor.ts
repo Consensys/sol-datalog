@@ -24,6 +24,6 @@ export class Functor extends Declaration {
     }
 
     getStructId(): any {
-        return [this.name, ...this.args, this.returnType, this.stateful];
+        return [this.name, this.args, this.returnType, this.stateful];
     }
 }

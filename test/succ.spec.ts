@@ -185,13 +185,13 @@ describe("Test succ relation for all samples", () => {
         describe(sample, () => {
             let units: sol.SourceUnit[];
             let infer: sol.InferType;
-            let contents: string;
+            let contents: Buffer;
             let succ: Fact[];
             let succFirst: NdGraph;
             let g: NdGraph;
 
             before(async () => {
-                contents = fse.readFileSync(sample, { encoding: "utf-8" });
+                contents = fse.readFileSync(sample);
                 const result = await sol.compileSol(sample, "auto");
 
                 const data = result.data;
