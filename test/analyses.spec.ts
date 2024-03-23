@@ -54,9 +54,13 @@ describe("Analyses", () => {
                 instance.release();
 
                 for (const [key, val] of Object.entries(expectedOutput)) {
-                    expect(
-                        (analysisResults.get(key) as dl.Fact[]).map((fact) => fact.toJSON())
-                    ).toEqual(val);
+                    const received = (analysisResults.get(key) as dl.Fact[]).map((fact) =>
+                        fact.toJSON()
+                    );
+                    console.error(key);
+                    console.error(received);
+                    console.error(val);
+                    expect(received).toEqual(val);
                 }
             });
         });
