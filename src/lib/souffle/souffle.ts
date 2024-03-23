@@ -4,11 +4,10 @@ import { datalogFromUnits } from "../translate";
 import { searchRecursive } from "../utils";
 import { ANALYSES_DIR } from "../analyses";
 import { DETECTORS_DIR } from "../detectors";
-import { SouffleCSVInstance, SouffleOutputType, SouffleSQLiteInstance } from "./instance";
 import { Issue, getIssues, loadDetectors, parseTemplateSignature } from "../detector";
-import { Fact } from "./fact";
+import * as dl from "souffle.ts";
 
-export type OutputRelations = Map<string, Fact[]>;
+export type OutputRelations = Map<string, dl.Fact[]>;
 
 function getDLFromFolder(folder: string): string {
     const fileNames = searchRecursive(folder, (f) => f.endsWith(".dl"));
@@ -47,16 +46,16 @@ export function buildDatalog(units: sol.SourceUnit[], infer: sol.InferType): str
 export async function analyze(
     units: sol.SourceUnit[],
     infer: sol.InferType,
-    mode: SouffleOutputType,
+    mode: dl.SouffleOutputType,
     outputRelations: string[],
     soDir?: string
-): Promise<SouffleCSVInstance | SouffleSQLiteInstance> {
+): Promise<dl.SouffleCSVInstance | dl.SouffleSQLiteInstance> {
     const datalog = buildDatalog(units, infer);
 
     const instance =
         mode === "csv"
-            ? new SouffleCSVInstance(datalog, soDir)
-            : new SouffleSQLiteInstance(datalog, soDir);
+            ? new dl.SouffleCSVInstance(datalog, soDir)
+            : new dl.SouffleSQLiteInstance(datalog, soDir);
 
     await instance.run(outputRelations);
     return instance;
@@ -75,8 +74,8 @@ export async function detect(
         (template) => parseTemplateSignature(template.relationSignature)[0]
     );
 
-    const instance = (await analyze(units, infer, "csv", outputRelations)) as SouffleCSVInstance;
-    const outputs = instance.results();
+    const instance = (await analyze(units, infer, "csv", outputRelations)) as dl.SouffleCSVInstance;
+    const outputs = await instance.allFacts();
     instance.release();
 
     const res = getIssues(outputs, context);

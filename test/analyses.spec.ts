@@ -3,8 +3,7 @@ import fse from "fs-extra";
 import * as sol from "solc-typed-ast";
 import { OutputRelations, analyze } from "../src";
 import { searchRecursive } from "../src/lib/utils";
-import { SouffleCSVInstance, SouffleSQLiteInstance } from "../src/lib/souffle/instance";
-import { Fact } from "../src/lib/souffle/fact";
+import * as dl from "souffle.ts";
 import { join } from "path";
 
 const samples = searchRecursive("test/samples/analyses", (fileName) => fileName.endsWith(".json"));
@@ -50,13 +49,13 @@ describe("Analyses", () => {
                     "csv",
                     targetAnalyses,
                     DIST_SO_DIR
-                )) as SouffleCSVInstance;
-                const analysisResults = instance.results();
+                )) as dl.SouffleCSVInstance;
+                const analysisResults = await instance.allFacts();
                 instance.release();
 
                 for (const [key, val] of Object.entries(expectedOutput)) {
                     expect(
-                        (analysisResults.get(key) as Fact[]).map((fact) => fact.toJSON())
+                        (analysisResults.get(key) as dl.Fact[]).map((fact) => fact.toJSON())
                     ).toEqual(val);
                 }
             });
@@ -101,7 +100,7 @@ describe("Analyses work in sqlite mode", () => {
                 infer,
                 "sqlite",
                 targetAnalyses
-            )) as SouffleSQLiteInstance;
+            )) as dl.SouffleSQLiteInstance;
 
             for (const [key, val] of Object.entries(expectedOutput)) {
                 const actualResutls = (await instance.relationFacts(key)).map((f) => f.fields);

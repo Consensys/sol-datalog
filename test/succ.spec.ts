@@ -2,9 +2,9 @@ import expect from "expect";
 import fse from "fs-extra";
 import path, { join } from "path";
 import * as sol from "solc-typed-ast";
-import { SouffleCSVInstance, analyze } from "../src";
+import * as dl from "souffle.ts";
+import { analyze } from "../src";
 import { searchRecursive } from "../src/lib/utils";
-import { Fact } from "../src/lib/souffle/fact";
 
 require("dotenv").config();
 
@@ -118,7 +118,7 @@ function isFallThrough(s: sol.Statement | sol.Block | sol.UncheckedBlock): boole
     return true;
 }
 
-function binIdRelnToGraph(facts: Fact[]): NdGraph {
+function binIdRelnToGraph(facts: dl.Fact[]): NdGraph {
     const res = new Map();
     for (const f of facts) {
         const [prev, next] = f.fields as [number, number];
@@ -155,7 +155,7 @@ function getReachability(g: NdGraph, start: number): Reachable {
     return res;
 }
 
-export function dumpFacts(fs: Fact[]): void {
+export function dumpFacts(fs: dl.Fact[]): void {
     for (const f of fs) {
         console.error(f.toJSON());
     }
@@ -186,7 +186,7 @@ describe("Test succ relation for all samples", () => {
             let units: sol.SourceUnit[];
             let infer: sol.InferType;
             let contents: Buffer;
-            let succ: Fact[];
+            let succ: dl.Fact[];
             let succFirst: NdGraph;
             let g: NdGraph;
 
@@ -213,11 +213,11 @@ describe("Test succ relation for all samples", () => {
                     "csv",
                     ["succ", "succ_first"],
                     DIST_SO_DIR
-                )) as SouffleCSVInstance;
-                const analysisResults = instance.results();
+                )) as dl.SouffleCSVInstance;
+                const analysisResults = await instance.allFacts();
                 //instance.release();
-                succ = analysisResults.get("succ") as Fact[];
-                succFirst = binIdRelnToGraph(analysisResults.get("succ_first") as Fact[]);
+                succ = analysisResults.get("succ") as dl.Fact[];
+                succFirst = binIdRelnToGraph(analysisResults.get("succ_first") as dl.Fact[]);
                 g = binIdRelnToGraph(succ);
 
                 if (verbose) {
