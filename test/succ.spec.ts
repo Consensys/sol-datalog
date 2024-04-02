@@ -37,7 +37,7 @@ samples = samples.slice(
     )
 );
 */
-const verbose = false;
+const verbose = true;
 
 const MY_DIR = __dirname;
 const DIST_SO_DIR = join(MY_DIR, "../dist/functors");
