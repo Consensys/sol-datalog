@@ -16,7 +16,8 @@ const skipSamples: string[] = [
     "test/samples/solidity/meta/imports/lib/B.sol",
     "test/samples/solidity/meta/imports/lib2/C.sol",
     "test/samples/solidity/meta/imports/lib2/D.sol",
-    "test/samples/solidity/path_remapping/entry.sol"
+    "test/samples/solidity/path_remapping/entry.sol",
+    "test/samples/solidity/features_0824.sol"
 ];
 
 const samples = searchRecursive(

@@ -57,9 +57,6 @@ describe("Analyses", () => {
                     const received = (analysisResults.get(key) as dl.Fact[]).map((fact) =>
                         fact.toJSON()
                     );
-                    console.error(key);
-                    console.error(received);
-                    console.error(val);
                     expect(received).toEqual(val);
                 }
             });
