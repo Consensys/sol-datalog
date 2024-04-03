@@ -37,7 +37,7 @@ samples = samples.slice(
     )
 );
 */
-const verbose = true;
+const verbose = false;
 
 const MY_DIR = __dirname;
 const DIST_SO_DIR = join(MY_DIR, "../dist/functors");
@@ -46,34 +46,43 @@ export type NdGraph = Map<number, Set<number>>;
 export type Reachable = Set<number>;
 
 // Legitimate reachability exceptions
-const exceptions: Array<[string, string, number]> = [
+const exceptions: Array<[string, string, string]> = [
     // do { break; } while (exp)  - exp is unreachable
     [
         "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/latest_08.sol",
         "stmtStructDocs",
-        181
+        '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ],
     [
         "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/struct_docs_04.sol",
         "stmtStructDocs",
-        39
+        '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ],
     [
         "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/struct_docs_05.sol",
         "stmtStructDocs",
-        39
+        '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ],
     [
         "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/unicode_big.sol",
         "stmtStructDocs",
-        141
+        '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ]
 ];
 
 function isException(sample: string, fun: sol.FunctionDefinition, element: sol.ASTNode): boolean {
-    for (const [excFile, excFun, excId] of exceptions) {
-        if (excFile === sample && excFun === fun.name && excId === element.id) {
-            return true;
+    const xp = new sol.XPath(fun);
+    for (const [excFile, excFun, selector] of exceptions) {
+        if (excFile !== sample || excFun !== fun.name) {
+            continue;
+        }
+
+        const res = xp.query(selector);
+
+        for (const o of res) {
+            if (o === element) {
+                return true;
+            }
         }
     }
 
