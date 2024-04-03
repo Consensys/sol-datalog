@@ -85,7 +85,7 @@ function isException(sample: string, fun: sol.FunctionDefinition, element: sol.A
 
         for (const o of res) {
             console.error(o.id, element.id);
-            if (o === element) {
+            if (o.id === element.id) {
                 return true;
             }
         }
@@ -302,12 +302,16 @@ describe("Test succ relation for all samples", () => {
                                 continue;
                             }
 
+                            if (reachable.has(element.id)) {
+                                continue;
+                            }
+
                             // This is a legit exception
                             if (isException(sample, fun, element)) {
                                 continue;
                             }
 
-                            if (verbose && !reachable.has(element.id)) {
+                            if (verbose) {
                                 console.error(
                                     `Node ${element.extractSourceFragment(contents)} (${
                                         element.constructor.name
@@ -317,7 +321,7 @@ describe("Test succ relation for all samples", () => {
                                 );
                             }
 
-                            expect(reachable.has(element.id)).toBeTruthy();
+                            expect(false).toBeTruthy();
                         }
                     }
                 }
