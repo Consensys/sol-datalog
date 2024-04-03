@@ -49,22 +49,22 @@ export type Reachable = Set<number>;
 const exceptions: Array<[string, string, string]> = [
     // do { break; } while (exp)  - exp is unreachable
     [
-        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/latest_08.sol",
+        "test/samples/solidity/latest_08.sol",
         "stmtStructDocs",
         '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ],
     [
-        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/struct_docs_04.sol",
+        "test/samples/solidity/struct_docs_04.sol",
         "stmtStructDocs",
         '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ],
     [
-        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/struct_docs_05.sol",
+        "test/samples/solidity/struct_docs_05.sol",
         "stmtStructDocs",
         '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ],
     [
-        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/unicode_big.sol",
+        "test/samples/solidity/unicode_big.sol",
         "stmtStructDocs",
         '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ]
@@ -73,7 +73,7 @@ const exceptions: Array<[string, string, string]> = [
 function isException(sample: string, fun: sol.FunctionDefinition, element: sol.ASTNode): boolean {
     const xp = new sol.XPath(fun);
     for (const [excFile, excFun, selector] of exceptions) {
-        if (excFile !== sample || excFun !== fun.name) {
+        if (!sample.endsWith(excFile) || excFun !== fun.name) {
             continue;
         }
 
