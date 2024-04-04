@@ -4,12 +4,8 @@ import * as sol from "solc-typed-ast";
 import { OutputRelations, analyze } from "../src";
 import { searchRecursive } from "../src/lib/utils";
 import * as dl from "souffle.ts";
-import { join } from "path";
 
 const samples = searchRecursive("test/samples/analyses", (fileName) => fileName.endsWith(".json"));
-
-const MY_DIR = __dirname;
-const DIST_SO_DIR = join(MY_DIR, "../dist/functors");
 
 /**
  * Remove duplicate rows.
@@ -75,8 +71,7 @@ describe("Analyses", () => {
                     units,
                     infer,
                     "csv",
-                    targetAnalyses,
-                    DIST_SO_DIR
+                    targetAnalyses
                 )) as dl.SouffleCSVInstance;
                 const analysisResults = await instance.allFacts();
                 instance.release();

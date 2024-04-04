@@ -1,6 +1,6 @@
 import expect from "expect";
 import fse from "fs-extra";
-import path, { join } from "path";
+import path from "path";
 import * as sol from "solc-typed-ast";
 import * as dl from "souffle.ts";
 import { analyze } from "../src";
@@ -38,9 +38,6 @@ samples = samples.slice(
 );
 */
 const verbose = false;
-
-const MY_DIR = __dirname;
-const DIST_SO_DIR = join(MY_DIR, "../dist/functors");
 
 export type NdGraph = Map<number, Set<number>>;
 export type Reachable = Set<number>;
@@ -217,13 +214,10 @@ describe("Test succ relation for all samples", () => {
 
                 infer = new sol.InferType(result.compilerVersion as string);
 
-                const instance = (await analyze(
-                    units,
-                    infer,
-                    "csv",
-                    ["succ", "succ_first"],
-                    DIST_SO_DIR
-                )) as dl.SouffleCSVInstance;
+                const instance = (await analyze(units, infer, "csv", [
+                    "succ",
+                    "succ_first"
+                ])) as dl.SouffleCSVInstance;
                 const analysisResults = await instance.allFacts();
                 //instance.release();
                 succ = analysisResults.get("succ") as dl.Fact[];

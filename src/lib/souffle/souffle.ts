@@ -6,6 +6,7 @@ import { ANALYSES_DIR } from "../analyses";
 import { DETECTORS_DIR } from "../detectors";
 import { Issue, getIssues, loadDetectors, parseTemplateSignature } from "../detector";
 import * as dl from "souffle.ts";
+import { join } from "path";
 
 export type OutputRelations = Map<string, dl.Fact[]>;
 
@@ -40,6 +41,9 @@ export function buildDatalog(units: sol.SourceUnit[], infer: sol.InferType): str
     ].join("\n");
 }
 
+const MY_DIR = __dirname;
+const DIST_SO_DIR = join(MY_DIR, "../../functors");
+
 /**
  * Helper function to analyze a bunch of solc-typed-ast SourceUnits and output some of the relations
  */
@@ -47,15 +51,14 @@ export async function analyze(
     units: sol.SourceUnit[],
     infer: sol.InferType,
     mode: dl.SouffleOutputType,
-    outputRelations: string[],
-    soDir?: string
+    outputRelations: string[]
 ): Promise<dl.SouffleCSVInstance | dl.SouffleSQLiteInstance> {
     const datalog = buildDatalog(units, infer);
 
     const instance =
         mode === "csv"
-            ? new dl.SouffleCSVInstance(datalog, soDir)
-            : new dl.SouffleSQLiteInstance(datalog, soDir);
+            ? new dl.SouffleCSVInstance(datalog, DIST_SO_DIR)
+            : new dl.SouffleSQLiteInstance(datalog, DIST_SO_DIR);
 
     await instance.run(outputRelations);
     return instance;

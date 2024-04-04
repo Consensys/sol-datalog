@@ -8,5 +8,6 @@ src/gen/declarations.ts
 src/lib/souffle/value_parser.ts
 src/lib/souffle/parser/souffle_parser_gen.js
 src/lib/souffle/parser/souffle_value_parser_gen.js
-functors/functors.o
-functors/libfunctors.so
+src/functors/functors.o
+src/functors/libfunctors.so
+.vscode

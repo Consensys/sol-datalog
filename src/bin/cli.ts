@@ -284,7 +284,7 @@ async function main() {
 
     const reader = new ASTReader();
     const units = reader.read(result.data);
-    const infer = new InferType(compilerVersion);
+    const infer = new InferType(result.compilerVersion as string);
 
     const datalog = buildDatalog(units, infer);
 
