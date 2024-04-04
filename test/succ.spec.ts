@@ -37,7 +37,7 @@ samples = samples.slice(
     )
 );
 */
-const verbose = true;
+const verbose = false;
 
 const MY_DIR = __dirname;
 const DIST_SO_DIR = join(MY_DIR, "../dist/functors");
@@ -79,12 +79,7 @@ function isException(sample: string, fun: sol.FunctionDefinition, element: sol.A
 
         const res = xp.query(selector);
 
-        if (verbose) {
-            console.error(selector, res.length);
-        }
-
         for (const o of res) {
-            console.error(o.id, element.id);
             if (o.id === element.id) {
                 return true;
             }

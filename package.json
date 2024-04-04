@@ -32,7 +32,7 @@
         "solc-typed-ast": "^18.1.2",
         "sqlite": "^5.1.1",
         "sqlite3": "^5.1.7",
-        "souffle.ts": "^0.1.2"
+        "souffle.ts": "^0.1.5"
     },
     "devDependencies": {
         "@ts-ast-parser/core": "^0.7.0",

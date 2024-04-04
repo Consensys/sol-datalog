@@ -11,6 +11,23 @@ const samples = searchRecursive("test/samples/analyses", (fileName) => fileName.
 const MY_DIR = __dirname;
 const DIST_SO_DIR = join(MY_DIR, "../dist/functors");
 
+/**
+ * Sanitize the facts for a given relation by converting all non-primitive columns to null.
+ * We do this before comparing, since some path facts may be non-deterministic.
+ */
+function sanitize(relation: dl.Relation, facts: any[][]): any[][] {
+    const nonPrimitiveFieldIdxs: Set<number> = new Set(
+        relation.fields
+            .map(([, type], i) => [type, i] as [dl.DatalogType, number])
+            .filter(([type]) => !dl.isPrimitiveType(type))
+            .map(([, idx]) => idx)
+    );
+
+    return facts.map((values) =>
+        values.map((v, idx) => (nonPrimitiveFieldIdxs.has(idx) ? null : v))
+    );
+}
+
 describe("Analyses", () => {
     for (const json of samples) {
         const sample = json.replace(".json", ".sol");
@@ -54,10 +71,14 @@ describe("Analyses", () => {
                 instance.release();
 
                 for (const [key, val] of Object.entries(expectedOutput)) {
-                    const received = (analysisResults.get(key) as dl.Fact[]).map((fact) =>
-                        fact.toJSON()
+                    const relation = instance.relation(key);
+                    const received = sanitize(
+                        relation,
+                        (analysisResults.get(key) as dl.Fact[]).map((fact) => fact.toJSON())
                     );
-                    expect(received).toEqual(val);
+                    const expected = sanitize(relation, val);
+
+                    expect(received).toEqual(expected);
                 }
             });
         });
