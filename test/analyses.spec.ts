@@ -12,7 +12,18 @@ const MY_DIR = __dirname;
 const DIST_SO_DIR = join(MY_DIR, "../dist/functors");
 
 /**
- * Sanitize the facts for a given relation by converting all non-primitive columns to null.
+ * Remove duplicate rows.
+ */
+function dedup(facts: any[][]): any[][] {
+    const m = new Map<string, any[]>(facts.map((row) => [dl.pp(row), row]));
+
+    return [...m.values()];
+}
+
+/**
+ * Sanitize the facts for a given relation by converting all non-primitive
+ * columns to null and removing duplicate rows.
+ *
  * We do this before comparing, since some path facts may be non-deterministic.
  */
 function sanitize(relation: dl.Relation, facts: any[][]): any[][] {
@@ -23,8 +34,8 @@ function sanitize(relation: dl.Relation, facts: any[][]): any[][] {
             .map(([, idx]) => idx)
     );
 
-    return facts.map((values) =>
-        values.map((v, idx) => (nonPrimitiveFieldIdxs.has(idx) ? null : v))
+    return dedup(
+        facts.map((values) => values.map((v, idx) => (nonPrimitiveFieldIdxs.has(idx) ? null : v)))
     );
 }
 
