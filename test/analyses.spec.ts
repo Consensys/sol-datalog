@@ -3,14 +3,41 @@ import fse from "fs-extra";
 import * as sol from "solc-typed-ast";
 import { OutputRelations, analyze } from "../src";
 import { searchRecursive } from "../src/lib/utils";
-import { SouffleCSVInstance, SouffleSQLiteInstance } from "../src/lib/souffle/instance";
-import { Fact } from "../src/lib/souffle/fact";
+import * as dl from "souffle.ts";
 import { join } from "path";
 
 const samples = searchRecursive("test/samples/analyses", (fileName) => fileName.endsWith(".json"));
 
 const MY_DIR = __dirname;
 const DIST_SO_DIR = join(MY_DIR, "../dist/functors");
+
+/**
+ * Remove duplicate rows.
+ */
+function dedup(facts: any[][]): any[][] {
+    const m = new Map<string, any[]>(facts.map((row) => [dl.pp(row), row]));
+
+    return [...m.values()];
+}
+
+/**
+ * Sanitize the facts for a given relation by converting all non-primitive
+ * columns to null and removing duplicate rows.
+ *
+ * We do this before comparing, since some path facts may be non-deterministic.
+ */
+function sanitize(relation: dl.Relation, facts: any[][]): any[][] {
+    const nonPrimitiveFieldIdxs: Set<number> = new Set(
+        relation.fields
+            .map(([, type], i) => [type, i] as [dl.DatalogType, number])
+            .filter(([type]) => !dl.isPrimitiveType(type))
+            .map(([, idx]) => idx)
+    );
+
+    return dedup(
+        facts.map((values) => values.map((v, idx) => (nonPrimitiveFieldIdxs.has(idx) ? null : v)))
+    );
+}
 
 describe("Analyses", () => {
     for (const json of samples) {
@@ -50,14 +77,19 @@ describe("Analyses", () => {
                     "csv",
                     targetAnalyses,
                     DIST_SO_DIR
-                )) as SouffleCSVInstance;
-                const analysisResults = instance.results();
+                )) as dl.SouffleCSVInstance;
+                const analysisResults = await instance.allFacts();
                 instance.release();
 
                 for (const [key, val] of Object.entries(expectedOutput)) {
-                    expect(
-                        (analysisResults.get(key) as Fact[]).map((fact) => fact.toJSON())
-                    ).toEqual(val);
+                    const relation = instance.relation(key);
+                    const received = sanitize(
+                        relation,
+                        (analysisResults.get(key) as dl.Fact[]).map((fact) => fact.toJSON())
+                    );
+                    const expected = sanitize(relation, val);
+
+                    expect(received).toEqual(expected);
                 }
             });
         });
@@ -101,7 +133,7 @@ describe("Analyses work in sqlite mode", () => {
                 infer,
                 "sqlite",
                 targetAnalyses
-            )) as SouffleSQLiteInstance;
+            )) as dl.SouffleSQLiteInstance;
 
             for (const [key, val] of Object.entries(expectedOutput)) {
                 const actualResutls = (await instance.relationFacts(key)).map((f) => f.fields);

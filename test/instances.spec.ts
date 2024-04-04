@@ -1,11 +1,7 @@
 import expect from "expect";
 import * as sol from "solc-typed-ast";
 import { buildDatalog } from "../src";
-import {
-    SouffleCSVInstance,
-    SouffleCSVToSQLInstance,
-    SouffleInstanceI
-} from "../src/lib/souffle/instance";
+import * as dl from "souffle.ts";
 import { join } from "path";
 
 const MY_DIR = __dirname;
@@ -14,7 +10,10 @@ const DIST_SO_DIR = join(MY_DIR, "../dist/functors");
 describe("Instances have equivalent behavior", () => {
     const samples: string[] = ["test/samples/analyses/fcall.sol"];
     // The SouffleSQLiteInstance doesnt work on record types due to
-    const instances = [SouffleCSVInstance /*SouffleSQLiteInstance,*/, SouffleCSVToSQLInstance];
+    const instances = [
+        dl.SouffleCSVInstance /*SouffleSQLiteInstance,*/,
+        dl.SouffleCSVToSQLInstance
+    ];
 
     for (const sample of samples) {
         describe(sample, () => {
@@ -22,7 +21,7 @@ describe("Instances have equivalent behavior", () => {
             let datalog: string;
             let reader: sol.ASTReader;
             let version: string;
-            let firstInstance: SouffleInstanceI;
+            let firstInstance: dl.SouffleInstanceI;
             let analyses: string[];
 
             before(async () => {

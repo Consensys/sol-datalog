@@ -21,7 +21,7 @@ import {
     isExact
 } from "solc-typed-ast";
 import { analyze, buildDatalog, detect } from "../lib";
-import { SouffleCSVInstance } from "../lib/souffle/instance";
+import * as dl from "souffle.ts";
 
 const pkg = require("../../package.json");
 
@@ -306,8 +306,8 @@ async function main() {
             infer,
             "csv",
             options.dumpAnalyses
-        )) as SouffleCSVInstance;
-        const output = instance.results();
+        )) as dl.SouffleCSVInstance;
+        const output = await instance.allFacts();
         instance.release();
 
         for (const analysis of options.dumpAnalyses) {

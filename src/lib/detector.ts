@@ -3,11 +3,11 @@ import * as sol from "solc-typed-ast";
 import { searchRecursive } from "./utils";
 import { OutputRelations } from "./souffle";
 import { DETECTORS_DIR } from "./detectors";
-import { Fact, FieldVal } from "./souffle/fact";
+import * as dl from "souffle.ts";
 
 type SignatureArgs = Array<[string, string]>;
 type ParsedSignature = [string, SignatureArgs];
-type SubstMap = Map<string, FieldVal>;
+type SubstMap = Map<string, dl.FieldVal>;
 
 interface DetectorTemplate {
     fileName: string;
@@ -54,7 +54,7 @@ export function parseTemplateSignature(sig: string): ParsedSignature {
     return [name, args];
 }
 
-function makeSubst(formals: SignatureArgs, fact: Fact): SubstMap {
+function makeSubst(formals: SignatureArgs, fact: dl.Fact): SubstMap {
     const res = new Map();
 
     sol.assert(

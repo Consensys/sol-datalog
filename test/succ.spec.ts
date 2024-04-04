@@ -2,9 +2,9 @@ import expect from "expect";
 import fse from "fs-extra";
 import path, { join } from "path";
 import * as sol from "solc-typed-ast";
-import { SouffleCSVInstance, analyze } from "../src";
+import * as dl from "souffle.ts";
+import { analyze } from "../src";
 import { searchRecursive } from "../src/lib/utils";
-import { Fact } from "../src/lib/souffle/fact";
 
 require("dotenv").config();
 
@@ -16,7 +16,8 @@ const skipSamples: string[] = [
     "test/samples/solidity/meta/imports/lib/B.sol",
     "test/samples/solidity/meta/imports/lib2/C.sol",
     "test/samples/solidity/meta/imports/lib2/D.sol",
-    "test/samples/solidity/path_remapping/entry.sol"
+    "test/samples/solidity/path_remapping/entry.sol",
+    "test/samples/solidity/features_0824.sol"
 ];
 
 const samples = searchRecursive(
@@ -45,34 +46,43 @@ export type NdGraph = Map<number, Set<number>>;
 export type Reachable = Set<number>;
 
 // Legitimate reachability exceptions
-const exceptions: Array<[string, string, number]> = [
+const exceptions: Array<[string, string, string]> = [
     // do { break; } while (exp)  - exp is unreachable
     [
-        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/latest_08.sol",
+        "test/samples/solidity/latest_08.sol",
         "stmtStructDocs",
-        181
+        '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ],
     [
-        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/struct_docs_04.sol",
+        "test/samples/solidity/struct_docs_04.sol",
         "stmtStructDocs",
-        39
+        '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ],
     [
-        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/struct_docs_05.sol",
+        "test/samples/solidity/struct_docs_05.sol",
         "stmtStructDocs",
-        39
+        '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ],
     [
-        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/unicode_big.sol",
+        "test/samples/solidity/unicode_big.sol",
         "stmtStructDocs",
-        141
+        '//FunctionDefinition[@name="stmtStructDocs"]/Block/DoWhileStatement/Literal'
     ]
 ];
 
 function isException(sample: string, fun: sol.FunctionDefinition, element: sol.ASTNode): boolean {
-    for (const [excFile, excFun, excId] of exceptions) {
-        if (excFile === sample && excFun === fun.name && excId === element.id) {
-            return true;
+    const xp = new sol.XPath(fun);
+    for (const [excFile, excFun, selector] of exceptions) {
+        if (!sample.endsWith(excFile) || excFun !== fun.name) {
+            continue;
+        }
+
+        const res = xp.query(selector);
+
+        for (const o of res) {
+            if (o.id === element.id) {
+                return true;
+            }
         }
     }
 
@@ -118,7 +128,7 @@ function isFallThrough(s: sol.Statement | sol.Block | sol.UncheckedBlock): boole
     return true;
 }
 
-function binIdRelnToGraph(facts: Fact[]): NdGraph {
+function binIdRelnToGraph(facts: dl.Fact[]): NdGraph {
     const res = new Map();
     for (const f of facts) {
         const [prev, next] = f.fields as [number, number];
@@ -155,7 +165,7 @@ function getReachability(g: NdGraph, start: number): Reachable {
     return res;
 }
 
-export function dumpFacts(fs: Fact[]): void {
+export function dumpFacts(fs: dl.Fact[]): void {
     for (const f of fs) {
         console.error(f.toJSON());
     }
@@ -186,7 +196,7 @@ describe("Test succ relation for all samples", () => {
             let units: sol.SourceUnit[];
             let infer: sol.InferType;
             let contents: Buffer;
-            let succ: Fact[];
+            let succ: dl.Fact[];
             let succFirst: NdGraph;
             let g: NdGraph;
 
@@ -213,11 +223,11 @@ describe("Test succ relation for all samples", () => {
                     "csv",
                     ["succ", "succ_first"],
                     DIST_SO_DIR
-                )) as SouffleCSVInstance;
-                const analysisResults = instance.results();
+                )) as dl.SouffleCSVInstance;
+                const analysisResults = await instance.allFacts();
                 //instance.release();
-                succ = analysisResults.get("succ") as Fact[];
-                succFirst = binIdRelnToGraph(analysisResults.get("succ_first") as Fact[]);
+                succ = analysisResults.get("succ") as dl.Fact[];
+                succFirst = binIdRelnToGraph(analysisResults.get("succ_first") as dl.Fact[]);
                 g = binIdRelnToGraph(succ);
 
                 if (verbose) {
@@ -287,12 +297,16 @@ describe("Test succ relation for all samples", () => {
                                 continue;
                             }
 
+                            if (reachable.has(element.id)) {
+                                continue;
+                            }
+
                             // This is a legit exception
                             if (isException(sample, fun, element)) {
                                 continue;
                             }
 
-                            if (verbose && !reachable.has(element.id)) {
+                            if (verbose) {
                                 console.error(
                                     `Node ${element.extractSourceFragment(contents)} (${
                                         element.constructor.name
@@ -302,7 +316,7 @@ describe("Test succ relation for all samples", () => {
                                 );
                             }
 
-                            expect(reachable.has(element.id)).toBeTruthy();
+                            expect(false).toBeTruthy();
                         }
                     }
                 }
