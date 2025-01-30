@@ -62,7 +62,7 @@
         "datalog",
         "souffle"
     ],
-    "author": "",
+    "author": "Dimitar Bounov <dimitar.bounov@consensys.net> (https://github.com/cd1m0)",
     "license": "Apache-2.0",
     "bugs": {
         "url": "https://github.com/Consensys/sol-datalog/issues"
