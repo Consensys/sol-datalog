@@ -8,7 +8,8 @@
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "bin": {
-        "sol-datalog-cli": "dist/bin/cli.js"
+        "sol-datalog-cli": "dist/bin/cli.js",
+        "sol-llm-features": "dist/bin/llm-features.js"
     },
     "scripts": {
         "clean": "rm -rf dist/ && rm -rf src/gen/declarations.ts src/gen/translate.ts souffle_parser_gen.js souffle_value_parser_gen.js",
@@ -17,7 +18,8 @@
         "copy-dl": "cp -r src/lib/analyses dist/lib && cp -r src/lib/detectors dist/lib",
         "copy-functors": "cp -r src/functors dist/",
         "build-functors": "./scripts/build_functors.sh",
-        "build": "npm run clean && npm run gen-translation-modules && npm run transpile && chmod a+x dist/bin/cli.js && npm run copy-dl && npm run build-functors && npm run copy-functors",
+        "build": "npm run clean && npm run gen-translation-modules && npm run transpile && chmod a+x dist/bin/cli.js dist/bin/llm-features.js && npm run copy-dl && npm run build-functors && npm run copy-functors",
+        "quick-build": "npm run transpile && chmod a+x dist/bin/cli.js dist/bin/llm-features.js && npm run copy-dl",
         "test": "c8 mocha",
         "lint": "eslint src/ test/ --ext=ts",
         "lint:fix": "eslint src/ test/ --ext=ts --fix",

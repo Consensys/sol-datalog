@@ -96,6 +96,9 @@ readExpr(eId, vId) :-
 readExpr(eId, vId) :-
     IndexRangeAccess_endExpression(eId, eId, 1), readExpr(sId, vId).
 
+readStmt(sId, vId) :-
+    ExpressionStatement_expression(sId, eId), readExpr(eId, vId).
+
 /// ============== STATEMENTS ============================
 /// Specifies whether the variable vId may be read while evaluating the
 /// statement sId

@@ -9,10 +9,14 @@ import {
     CompileResult,
     CompilerKind,
     CompilerVersions,
+    ContractDefinition,
+    FunctionDefinition,
     InferType,
     LatestCompilerVersion,
+    ModifierDefinition,
     PathOptions,
     PossibleCompilerKinds,
+    VariableDeclaration,
     compileJson,
     compileJsonData,
     compileSol,
@@ -22,6 +26,7 @@ import {
 } from "solc-typed-ast";
 import { analyze } from "../lib";
 import * as dl from "souffle.ts";
+import { Fact, Relation } from "../lib/utils";
 
 const pkg = require("../../package.json");
 
@@ -280,11 +285,43 @@ async function main() {
     const units = reader.read(result.data);
     const infer = new InferType(result.compilerVersion as string);
 
+    const relations: Relation[] = [
+        new Relation(
+            "inheritsStrict",
+            "Contract {0}.name inherits from contract {1}.name",
+            ContractDefinition,
+            ContractDefinition
+        ),
+        new Relation(
+            "hasParam",
+            "Function {0}.name has parameter {1}.name",
+            FunctionDefinition,
+            VariableDeclaration
+        ),
+        new Relation(
+            "hasModifier",
+            "Function {0}.name has modifier {1}.name",
+            FunctionDefinition,
+            ModifierDefinition
+        ),
+        new Relation(
+            "readFunction",
+            "Function {0}.name reads variable {1}.name",
+            FunctionDefinition,
+            VariableDeclaration
+        ),
+        new Relation(
+            "writeFunction",
+            "Function {0}.name writes variable {1}.name",
+            FunctionDefinition,
+            VariableDeclaration
+        )
+    ];
+
     const outputAnalyses = [
         "inheritsStrict",
         "hasParam",
         "hasModifier",
-        "hasBody",
         "readFunction",
         "writeFunction"
     ];
@@ -293,10 +330,17 @@ async function main() {
     const output = await instance.allFacts();
     instance.release();
 
-    for (const analysis of outputAnalyses) {
-        const facts = output.get(analysis);
+    for (const relation of relations) {
+        const facts = output.get(relation.underlyingRelationName);
 
-        console.log(analysis, facts ? facts.map((f) => f.toCSVRow()) : facts);
+        if (!facts) {
+            continue;
+        }
+
+        for (const fact of facts) {
+            const f = new Fact(relation, fact, reader.context);
+            console.log(f.pp());
+        }
     }
     return;
 }
