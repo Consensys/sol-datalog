@@ -286,7 +286,8 @@ async function main() {
         ["hasParam", "Function {0}.name has parameter {1}.name"],
         ["hasModifier", "Function {0}.name has modifier {1}.name"],
         ["readFunction", "Function {0}.name reads variable {1}.name"],
-        ["writeFunction", "Function {0}.name writes variable {1}.name"]
+        ["writeFunction", "Function {0}.name writes variable {1}.name"],
+        ["callsPath", "Function {0}.name calls callable {1}.name via {2}"]
     ]);
 
     const outputAnalyses = [
@@ -294,7 +295,8 @@ async function main() {
         "hasParam",
         "hasModifier",
         "readFunction",
-        "writeFunction"
+        "writeFunction",
+        "callsPath"
     ];
     const instance = (await analyze(units, infer, "csv", outputAnalyses)) as dl.SouffleCSVInstance;
 
