@@ -99,8 +99,24 @@ export class Fact {
             const part = pp(detail);
 
             message = message.replace(
-                new RegExp("\\{" + i + "\\}.name", "g"),
-                (detail as any).name
+                new RegExp("\\{" + i + "\\}([.a-zA-Z0-9_]*)", "g"),
+                (match, p) => {
+                    if (p.length === 0) {
+                        return pp(detail);
+                    }
+
+                    const components = p.split(".");
+                    let val: any = detail;
+                    for (const comp of components) {
+                        if (comp.length === 0) {
+                            continue;
+                        }
+
+                        val = val[comp];
+                    }
+
+                    return pp(val);
+                }
             );
             message = message.replace(new RegExp("\\{" + i + "\\}", "g"), part);
         }

@@ -1,11 +1,21 @@
-.decl callsDirectly(caller: FunctionDefinitionId, callee: FunctionDefinitionId)
+.decl callsDirectly(caller: FunctionDefinitionId, callee: id)
 callsDirectly(caller, callee) :- 
     FunctionDefinition(caller),
-    FunctionDefinition(callee),
+    ancestor(caller, callId),
     FunctionCall(callId),
     FunctionCall_expression(callId, exprId),
     exprRefersTo(exprId, callee),
-    ancestor(caller, callId).
+    FunctionDefinition(callee).
+
+callsDirectly(caller, callee) :- 
+    FunctionDefinition(caller),
+    ancestor(caller, callId),
+    FunctionCall(callId),
+    FunctionCall_expression(callId, exprId),
+    exprRefersTo(exprId, calleeBaseDef),
+    FunctionDefinition(calleeBaseDef),
+    FunctionDefinition_virtual(calleeBaseDef, 1),
+    overrides(callee, calleeBaseDef).
 
 .type CallPath = [ head: FunctionDefinitionId, tail: CallPath ]
 .functor isSubsequence(a: CallPath, b: CallPath):number stateful

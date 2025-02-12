@@ -1,0 +1,15 @@
+{
+    "callsPath": {
+        "fmt": "{0}.vScope.name {0}.name calls {1}.vScope.name {1}.name via ${2}",
+        "data": [
+            "Base foo calls Base boo via $[Base:foo,Base:boo]",
+            "Base goo calls Base foo via $[Base:goo,Base:foo]",
+            "Base goo calls Base boo via $[Base:goo,Base:foo,Base:boo]",
+            "Base goo calls Base1 foo via $[Base:goo,Base1:foo]",
+            "Base goo calls Base1 moo via $[Base:goo,Base1:foo,Base1:moo]",
+            "Base1 foo calls Base1 moo via $[Base1:foo,Base1:moo]",
+            "Child doo calls Base1 foo via $[Child:doo,Base1:foo]",
+            "Child doo calls Base1 moo via $[Child:doo,Base1:foo,Base1:moo]"
+        ]
+    }
+}
