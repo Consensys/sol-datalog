@@ -2,11 +2,17 @@ import expect from "expect";
 import fse from "fs-extra";
 import * as sol from "solc-typed-ast";
 import { OutputRelations, analyze } from "../src";
-import { searchRecursive } from "../src/lib/utils";
+import { Fact, searchRecursive } from "../src/lib/utils";
 import * as dl from "souffle.ts";
 
 const samples = searchRecursive("test/samples/analyses", (fileName) => fileName.endsWith(".json"));
 
+interface AnalysesTest {
+    [relation: string]: {
+        fmt: string;
+        data: string[];
+    };
+}
 /**
  * Remove duplicate rows.
  */
@@ -22,7 +28,7 @@ function dedup(facts: any[][]): any[][] {
  *
  * We do this before comparing, since some path facts may be non-deterministic.
  */
-function sanitize(relation: dl.Relation, facts: any[][]): any[][] {
+export function sanitize(relation: dl.Relation, facts: any[][]): any[][] {
     const nonPrimitiveFieldIdxs: Set<number> = new Set(
         relation.fields
             .map(([, type], i) => [type, i] as [dl.DatalogType, number])
@@ -41,7 +47,7 @@ describe("Analyses", () => {
 
         describe(sample, () => {
             let units: sol.SourceUnit[];
-            let expectedOutput: OutputRelations;
+            let expectedOutput: AnalysesTest;
             let reader: sol.ASTReader;
             let version: string;
 
@@ -61,7 +67,7 @@ describe("Analyses", () => {
 
                 expectedOutput = fse.readJSONSync(json, {
                     encoding: "utf-8"
-                }) as OutputRelations;
+                }) as AnalysesTest;
             });
 
             it("Detectors produce expected results", async () => {
@@ -77,14 +83,11 @@ describe("Analyses", () => {
                 instance.release();
 
                 for (const [key, val] of Object.entries(expectedOutput)) {
-                    const relation = instance.relation(key);
-                    const received = sanitize(
-                        relation,
-                        (analysisResults.get(key) as dl.Fact[]).map((fact) => fact.toJSON())
+                    const received = (analysisResults.get(key) as dl.Fact[]).map((f) =>
+                        new Fact(f, reader.context).fmt(val.fmt)
                     );
-                    const expected = sanitize(relation, val);
 
-                    expect(received).toEqual(expected);
+                    expect(received).toEqual(val.data);
                 }
             });
         });
@@ -131,8 +134,11 @@ describe("Analyses work in sqlite mode", () => {
             )) as dl.SouffleSQLiteInstance;
 
             for (const [key, val] of Object.entries(expectedOutput)) {
-                const actualResutls = (await instance.relationFacts(key)).map((f) => f.fields);
-                expect(actualResutls).toEqual(val);
+                const received = (await instance.relationFacts(key)).map((f) =>
+                    new Fact(f, reader.context).fmt(val.fmt)
+                );
+
+                expect(received).toEqual(val.data);
             }
 
             instance.release();

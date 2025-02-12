@@ -20,7 +20,7 @@
         "build-functors": "./scripts/build_functors.sh",
         "build-preamble": "npm run gen-translation-modules",
         "build-full": "npm run clean && npm run build-preamble && npm run transpile && chmod a+x dist/bin/cli.js dist/bin/llm-features.js && npm run copy-dl && npm run build-functors && npm run copy-functors",
-        "build": "npm run clean && npm run transpile && chmod a+x dist/bin/cli.js dist/bin/llm-features.js && npm run copy-dl && npm run build-functors && npm run copy-functors",
+        "build": "npm run transpile && chmod a+x dist/bin/cli.js dist/bin/llm-features.js && npm run copy-dl",
         "quick-build": "npm run transpile && chmod a+x dist/bin/cli.js dist/bin/llm-features.js && npm run copy-dl",
         "test": "c8 mocha",
         "lint": "eslint src/ test/ --ext=ts",
@@ -33,7 +33,7 @@
         "csv-parse": "^5.5.3",
         "dotenv": "^16.4.5",
         "fs-extra": "^11.2.0",
-        "solc-typed-ast": "^18.1.2",
+        "solc-typed-ast": "^18.1.4",
         "sqlite": "^5.1.1",
         "sqlite3": "^5.1.7",
         "souffle.ts": "^0.1.5"

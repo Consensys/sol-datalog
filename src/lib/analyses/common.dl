@@ -20,14 +20,6 @@ functionIn(id, name, contractId) :- function(id, name), FunctionDefinition_scope
 .decl contract(id: id, name: symbol)
 contract(id, name) :- ContractDefinition(id), ContractDefinition_name(id, name).
 
-/// Specifies that a childContractId inherits from baseContractId (or is the same contract)
-.decl inherits(childContractId: ContractDefinitionId, baseContractId: ContractDefinitionId)
-inherits(childContractId, baseContractId) :- ContractDefinition(childContractId), childContractId = baseContractId.
-inherits(childContractId, baseContractId) :-
-    ContractDefinition(childContractId),
-    ContractDefinition(baseContractId),
-    ContractDefinition_linearizedBaseContracts(childContractId, baseContractId, _).
-
 /// Specifies that a method with `methodId` belongs to contract `contractId` or one of its bases.
 .decl method(methodId: FunctionDefinitionId, contractId: ContractDefinitionId)
 method(methodId, contractId) :- inherits(contractId, baseId), functionIn(methodId, _, baseId).

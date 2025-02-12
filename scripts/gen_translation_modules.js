@@ -134,6 +134,10 @@ const staticPreamble = `
 .decl PragmaDirective_literals(parentId: FunctionCallId, literal: symbol, idx: number)
 .decl SourceUnit_exportedSymbols(parentId: SourceUnitId, name: symbol, id: id)
 .decl FunctionCallOptions_options(parentId: FunctionCallOptionsId, name: symbol, id: id)
+.decl FunctionDefinition_signature(funId: FunctionDefinitionId, signature: symbol)
+.decl FunctionDefinition_signatureHash(funId: FunctionDefinitionId, signature: symbol)
+.decl VariableDeclaration_signature(varId: VariableDeclarationId, signature: symbol)
+.decl VariableDeclaration_signatureHash(varId: VariableDeclarationId, signature: symbol)
 `;
 
 const skipFields = ["raw", "documentation", "nameLocation", "children", "src"];
@@ -883,6 +887,21 @@ function buildFactInvocation(className, constructor, baseName) {
     if (baseName === "Expression" || baseName === "PrimaryExpression") {
         res += `if (sol.isConstant(nd)) {
             res.push(\`ConstantExpression(\${nd.id}).\`);
+        }
+`;
+    }
+
+    if (className === "FunctionDefinition") {
+        res += `
+            res.push(\`FunctionDefinition_signature(\${nd.id}, "\${infer.signature(nd)}").\`);
+            res.push(\`FunctionDefinition_signatureHash(\${nd.id}, "\${infer.signatureHash(nd)}").\`);
+`;
+    }
+
+    if (className === "VariableDeclaration") {
+        res += `if (nd.stateVariable && nd.visibility === sol.StateVariableVisibility.Public) {
+            res.push(\`VariableDeclaration_signature(\${nd.id}, "\${infer.signature(nd)}").\`);
+            res.push(\`VariableDeclaration_signatureHash(\${nd.id}, "\${infer.signatureHash(nd)}").\`);
         }
 `;
     }

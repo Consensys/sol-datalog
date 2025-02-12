@@ -1,7 +1,3 @@
-.decl inheritsStrict(childContractId: ContractDefinitionId, baseContractId: ContractDefinitionId)
-inheritsStrict(childContractId, baseContractId) :- inherits(childContractId, baseContractId), childContractId != baseContractId.
-
-
 .decl hasParam(funId: FunctionDefinitionId, paramId: VariableDeclarationId)
 hasParam(fId, vId) :- FunctionDefinition_parameters(fId, paramId), ParameterList_parameters(paramId, vId, _).
 

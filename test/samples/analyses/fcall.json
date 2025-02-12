@@ -1,19 +1,23 @@
 {
-    "callsPath": [
-        [8, 22, [8, [22, null]]],
-        [8, 29, [8, [22, [29, null]]]],
-        [8, 40, [8, [22, [29, [40, null]]]]],
-        [15, 29, [15, [29, null]]],
-        [15, 40, [15, [29, [40, null]]]],
-        [22, 29, [22, [29, null]]],
-        [22, 40, [22, [29, [40, null]]]],
-        [29, 40, [29, [40, null]]],
-        [52, 8, [52, [8, null]]],
-        [52, 15, [52, [15, null]]],
-        [52, 22, [52, [8, [22, null]]]],
-        [52, 29, [52, [15, [29, null]]]],
-        [52, 40, [52, [15, [29, [40, null]]]]],
-        [52, 40, [52, [8, [22, [29, [40, null]]]]]],
-        [59, 59, [59, [59, null]]]
-    ]
+    "callsPath": {
+        "fmt": "{0}.name calls {1}.name via {2}",
+        "data": [
+            "a calls c via [Foo:a,Foo:c]",
+            "a calls d via [Foo:a,Foo:c,Foo:d]",
+            "a calls f via [Foo:a,Foo:c,Foo:d,Foo:f]",
+            "b calls d via [Foo:b,Foo:d]",
+            "b calls f via [Foo:b,Foo:d,Foo:f]",
+            "c calls d via [Foo:c,Foo:d]",
+            "c calls f via [Foo:c,Foo:d,Foo:f]",
+            "d calls f via [Foo:d,Foo:f]",
+            "main calls a via [Foo:main,Foo:a]",
+            "main calls b via [Foo:main,Foo:b]",
+            "main calls c via [Foo:main,Foo:a,Foo:c]",
+            "main calls d via [Foo:main,Foo:b,Foo:d]",
+            "main calls d via [Foo:main,Foo:a,Foo:c,Foo:d]",
+            "main calls f via [Foo:main,Foo:b,Foo:d,Foo:f]",
+            "main calls f via [Foo:main,Foo:a,Foo:c,Foo:d,Foo:f]",
+            "rec calls rec via [Foo:rec,Foo:rec]"
+        ]
+    }
 }

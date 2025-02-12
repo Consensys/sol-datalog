@@ -70,6 +70,10 @@ export function translateASTNodeInternal(nd: sol.ASTNode, infer: sol.InferType):
         res.push(
             `VariableDeclaration_value(${nd.id}, ${translateVal(nd.vValue === undefined ? -1 : nd.vValue)}, ${translateVal(nd.vValue !== undefined)}).`
         );
+        if (nd.stateVariable && nd.visibility === sol.StateVariableVisibility.Public) {
+            res.push(`VariableDeclaration_signature(${nd.id}, "${infer.signature(nd)}").`);
+            res.push(`VariableDeclaration_signatureHash(${nd.id}, "${infer.signatureHash(nd)}").`);
+        }
     } else if (nd instanceof sol.FunctionDefinition) {
         res.push(`FunctionDefinition(${nd.id}).`);
         res.push(`src(${nd.id}, "${nd.src}").`);
@@ -97,6 +101,8 @@ export function translateASTNodeInternal(nd: sol.ASTNode, infer: sol.InferType):
         res.push(
             `FunctionDefinition_body(${nd.id}, ${translateVal(nd.vBody === undefined ? -1 : nd.vBody)}, ${translateVal(nd.vBody !== undefined)}).`
         );
+        res.push(`FunctionDefinition_signature(${nd.id}, "${infer.signature(nd)}").`);
+        res.push(`FunctionDefinition_signatureHash(${nd.id}, "${infer.signatureHash(nd)}").`);
     } else if (nd instanceof sol.ExpressionStatement) {
         res.push(`ExpressionStatement(${nd.id}).`);
         res.push(`src(${nd.id}, "${nd.src}").`);

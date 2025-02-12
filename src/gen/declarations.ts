@@ -55,6 +55,10 @@ export const preamble = `
 .decl PragmaDirective_literals(parentId: FunctionCallId, literal: symbol, idx: number)
 .decl SourceUnit_exportedSymbols(parentId: SourceUnitId, name: symbol, id: id)
 .decl FunctionCallOptions_options(parentId: FunctionCallOptionsId, name: symbol, id: id)
+.decl FunctionDefinition_signature(funId: FunctionDefinitionId, signature: symbol)
+.decl FunctionDefinition_signatureHash(funId: FunctionDefinitionId, signature: symbol)
+.decl VariableDeclaration_signature(varId: VariableDeclarationId, signature: symbol)
+.decl VariableDeclaration_signatureHash(varId: VariableDeclarationId, signature: symbol)
 
 .type SourceUnitId <: id
 .decl SourceUnit_sourceEntryKey(id: SourceUnitId, val: symbol)
