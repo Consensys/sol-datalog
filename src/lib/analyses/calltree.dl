@@ -1,4 +1,9 @@
+/// Specifies whether the function `caller` may call the callee `callee`.
+/// `callee` may be either another `FunctionDefinition` or a
+/// `VariableDeclaration` (corresponding to a public variable getter)
 .decl callsDirectly(caller: FunctionDefinitionId, callee: id)
+
+// Simple call case
 callsDirectly(caller, callee) :- 
     FunctionDefinition(caller),
     ancestor(caller, callId),
@@ -7,6 +12,7 @@ callsDirectly(caller, callee) :-
     exprRefersTo(exprId, callee),
     FunctionDefinition(callee).
 
+// Calling a virtual function - include all overriding definitions
 callsDirectly(caller, callee) :- 
     FunctionDefinition(caller),
     ancestor(caller, callId),
@@ -16,6 +22,18 @@ callsDirectly(caller, callee) :-
     FunctionDefinition(calleeBaseDef),
     FunctionDefinition_virtual(calleeBaseDef, 1),
     overrides(callee, calleeBaseDef).
+
+// Calling a user-defined binary operator
+callsDirectly(caller, callee) :-
+    FunctionDefinition(caller),
+    ancestor(caller, exprId),
+    BinaryOperation_userFunction(exprId, callee, 1).
+
+// Calling a user-defined unary operator
+callsDirectly(caller, callee) :-
+    FunctionDefinition(caller),
+    ancestor(caller, exprId),
+    UnaryOperation_userFunction(exprId, callee, 1).
 
 .type CallPath = [ head: FunctionDefinitionId, tail: CallPath ]
 .functor isSubsequence(a: CallPath, b: CallPath):number stateful
