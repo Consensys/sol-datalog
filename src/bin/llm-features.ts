@@ -20,8 +20,15 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
-import { analyze, getRelation } from "../lib";
+import {
+    analyze,
+    FunctionDefinitionId,
+    getRelation,
+    ModifierDefinitionId,
+    VariableDeclarationId
+} from "../lib";
 import { Fact } from "../lib/utils";
+import { Relation } from "souffle.ts";
 
 const pkg = require("../../package.json");
 
@@ -284,21 +291,29 @@ async function main() {
         ["inhinheritsStrict", "Contract {0}.name inherits from contract {1}.name"],
         ["hasParam", "Function {0}.name has parameter {1}.name"],
         ["hasModifier", "Function {0}.name has modifier {1}.name"],
-        ["readFunction", "Function {0}.name reads variable {1}.name"],
-        ["writeFunction", "Function {0}.name writes variable {1}.name"],
+        ["access.readFunction", "Function {0}.name reads variable {1}.name"],
+        ["access.writeFunction", "Function {0}.name writes variable {1}.name"],
         ["cg.path", "Function {0}.name calls callable {1}.name via {2}"]
     ]);
 
     const outputAnalysesNames = [
         "inh.inheritsStrict",
-        "hasParam",
-        "hasModifier",
-        "readFunction",
-        "writeFunction",
+        "access.readFunction",
+        "access.writeFunction",
         "cg.path"
     ];
 
     const outputAnalyses = outputAnalysesNames.map(getRelation);
+    outputAnalyses.push(
+        new Relation("hasParam", [
+            ["fId", FunctionDefinitionId],
+            ["vId", VariableDeclarationId]
+        ]),
+        new Relation("hasModifier", [
+            ["fId", FunctionDefinitionId],
+            ["vId", ModifierDefinitionId]
+        ])
+    );
 
     const res = await analyze(units, infer, "csv", outputAnalyses);
     const output = await res.allFacts();

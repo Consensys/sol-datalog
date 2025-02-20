@@ -1,3 +1,4 @@
 .init inh = Inheritance
+.init access = Access
 .init cg = CallGraph
 .init cfg = CFG
