@@ -1,3 +1,6 @@
+.decl internalCall(id: FunctionCallId)
+internalCall(id) :- FunctionCall(id), !externalCall(id).
+
 // Compute all pairs of nodes (ancestorId, descendantId) where descendantId is a descendant ot ancestorId in the AST.
 .decl ancestor(ancestorId: id, descendantId: id)
 
@@ -22,7 +25,7 @@ contract(id, name) :- ContractDefinition(id), ContractDefinition_name(id, name).
 
 /// Specifies that a method with `methodId` belongs to contract `contractId` or one of its bases.
 .decl method(methodId: FunctionDefinitionId, contractId: ContractDefinitionId)
-method(methodId, contractId) :- inherits(contractId, baseId), functionIn(methodId, _, baseId).
+method(methodId, contractId) :- inh.inherits(contractId, baseId), functionIn(methodId, _, baseId).
 
 .decl ModifierInvocation_vReferencedDeclaration(mId: id, rId: id)
 ModifierInvocation_vReferencedDeclaration(mId, rId) :-
@@ -50,3 +53,7 @@ exprRefersTo(exprId, defId) :-
 exprRefersTo(exprId, defId) :-
     MemberAccess(exprId),
     MemberAccess_referencedDeclaration(exprId, defId).
+
+// True if nd is a checked or unchecked block
+.decl isBlock(nd: id) 
+isBlock(nd) :- (Block(nd) ; UncheckedBlock(nd)).

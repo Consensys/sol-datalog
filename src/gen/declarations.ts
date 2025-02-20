@@ -24,7 +24,7 @@ export const preamble = `
 .decl parent(parentId: id, childId: id)
 .decl src(id: id, src: symbol)
 .decl Node(id: id)
-.decl ExternalCall(id: FunctionCallId)
+.decl externalCall(id: FunctionCallId)
 .decl ConstantExpression(id: id)
 .decl CompilerVersion(major: number, minor: number, patch: number)
 .decl Expression(id: id)

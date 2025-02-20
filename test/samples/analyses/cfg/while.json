@@ -1,5 +1,5 @@
 {
-    "dominateStmt": {
+    "cfg.dom.dominateStmt": {
         "fmt": "{0} dominates {1}",
         "data": [
             "VariableDeclarationStatement #9 dominates VariableDeclarationStatement #13",

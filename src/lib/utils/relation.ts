@@ -64,7 +64,7 @@ function liftValue(val: DL.FieldVal, type: DL.DatalogType, ctx: ASTContext): Rel
     }
 
     if (type instanceof DL.RecordT) {
-        if (type.name === "CallPath") {
+        if (type.name === "NumPath") {
             const res: string[] = [];
 
             while (val !== null) {

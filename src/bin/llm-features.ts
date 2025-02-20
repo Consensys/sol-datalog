@@ -20,8 +20,7 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
-import { analyze } from "../lib";
-import * as dl from "souffle.ts";
+import { analyze, getRelation } from "../lib";
 import { Fact } from "../lib/utils";
 
 const pkg = require("../../package.json");
@@ -282,29 +281,31 @@ async function main() {
     const infer = new InferType(result.compilerVersion as string);
 
     const templates = new Map<string, string>([
-        ["inheritsStrict", "Contract {0}.name inherits from contract {1}.name"],
+        ["inhinheritsStrict", "Contract {0}.name inherits from contract {1}.name"],
         ["hasParam", "Function {0}.name has parameter {1}.name"],
         ["hasModifier", "Function {0}.name has modifier {1}.name"],
         ["readFunction", "Function {0}.name reads variable {1}.name"],
         ["writeFunction", "Function {0}.name writes variable {1}.name"],
-        ["callsPath", "Function {0}.name calls callable {1}.name via {2}"]
+        ["cg.path", "Function {0}.name calls callable {1}.name via {2}"]
     ]);
 
-    const outputAnalyses = [
-        "inheritsStrict",
+    const outputAnalysesNames = [
+        "inh.inheritsStrict",
         "hasParam",
         "hasModifier",
         "readFunction",
         "writeFunction",
-        "callsPath"
+        "cg.path"
     ];
-    const instance = (await analyze(units, infer, "csv", outputAnalyses)) as dl.SouffleCSVInstance;
 
-    const output = await instance.allFacts();
-    instance.release();
+    const outputAnalyses = outputAnalysesNames.map(getRelation);
+
+    const res = await analyze(units, infer, "csv", outputAnalyses);
+    const output = await res.allFacts();
+    res.release();
 
     for (const relation of outputAnalyses) {
-        const facts = output.get(relation);
+        const facts = output.get(relation.name);
 
         if (!facts) {
             continue;
@@ -312,7 +313,7 @@ async function main() {
 
         for (const fact of facts) {
             const f = new Fact(fact, reader.context);
-            console.log(f.fmt(templates.get(relation) as string));
+            console.log(f.fmt(templates.get(relation.name) as string));
         }
     }
     return;

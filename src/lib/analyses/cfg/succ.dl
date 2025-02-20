@@ -1,4 +1,4 @@
-    .decl succ(prev: id, next: id)
+.comp Successor : IdGraph {
     .decl succ_first(cId: id, fId: id)
 
     /// EXPRESSIONS
@@ -22,175 +22,260 @@
         UnaryOperation_subExpression(cId, subExpr),
         succ_first(subExpr, fId).
 
-    succ(prev, next) :-
+    // After the unary subexpr we evaluate the unary
+    edge(prev, next) :-
         UnaryOperation_subExpression(next, prev).
 
     // TODO: What about the case where we have a function call in the unary??
 
-    // ---- BinaryOperation
+    // ---- BinaryOperation - first expression is the first in the lhs
     succ_first(cId, fId) :-
         BinaryOperation(cId),
         BinaryOperation_leftExpression(cId, lhsId),
         succ_first(lhsId, fId).
 
-    succ(prev, next) :-
+    // After the LHS we evaluate the first expr in the RHS
+    edge(prev, next) :-
         BinaryOperation(bId),
         BinaryOperation_leftExpression(bId, prev),
         BinaryOperation_rightExpression(bId, rhsId),
         succ_first(rhsId, next).
 
-    succ(prev, next) :-
+    // After the RHS we evaluate the whole binary
+    edge(prev, next) :-
         BinaryOperation_rightExpression(next, prev).
 
     // ---- Conditional
+    // First expr is the first expr in the condition
     succ_first(cId, fId) :-
         Conditional(cId),
         Conditional_condition(cId, condId),
         succ_first(condId, fId).
 
-    succ(prev, next) :-
+    // After the conditional we may eval the first expr in the true branch
+    edge(prev, next) :-
         Conditional(cId),
         Conditional_condition(cId, prev),
         Conditional_trueExpression(cId, trueId),
         succ_first(trueId, next).
 
-    succ(prev, next) :-
+    // After the conditional we may eval the first expr in the false branch
+    edge(prev, next) :-
         Conditional(cId),
         Conditional_condition(cId, prev),
         Conditional_falseExpression(cId, falseId),
         succ_first(falseId, next).
 
-    succ(prev, next) :-
+    // Whole conditional is evaled after branches
+    edge(prev, next) :-
         Conditional_trueExpression(next, prev).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         Conditional_falseExpression(next, prev).
 
     // ---- Index access
-    // TODO: Is the base or index expresion evaluated first?
     // If there is an index expression this is a normal index access
     succ_first(iaId, first) :-
         IndexAccess_baseExpression(iaId, beId),
-        IndexAccess_indexExpression(iaId, _, 1),
+        IndexAccess_indexExpression(iaId, _, 1), // ignore array type exprs 
         succ_first(beId, first).
 
-    succ(prev, next) :-
+    // After base we evaluate index
+    edge(prev, next) :-
         IndexAccess_baseExpression(iaId, prev),
         IndexAccess_indexExpression(iaId, ieId, 1),
         succ_first(ieId, next).
 
-    succ(prev, next) :-
+    // After index we eval the whole index access
+    edge(prev, next) :-
         IndexAccess_indexExpression(next, prev, 1).
-
 
     // If there is no index expression this is an array type - just consider the whole thing one expression
     succ_first(iaId, iaId) :-
         IndexAccess_indexExpression(iaId, _, 0).
 
     // ---- IndexRangeAccess
-    // TODO: Whats the actual order between base, start and end?
+    // Base is evaluated first
     succ_first(iraId, first) :-
         IndexRangeAccess_baseExpression(iraId, beId),
         succ_first(beId, first).
 
-    // Case 1: Has start and end expressions
-    succ(prev, next) :-
+    // Case 1: Has start and end expressions - start is after base
+    edge(prev, next) :-
         IndexRangeAccess_baseExpression(iraId, prev),
         IndexRangeAccess_startExpression(iraId, startExprId, 1),
         succ_first(startExprId, next).
 
-    succ(prev, next) :-
+    // end is after start
+    edge(prev, next) :-
         IndexRangeAccess_startExpression(iraId, prev, 1),
         IndexRangeAccess_endExpression(iraId, eeId, 1),
         succ_first(eeId, next).
 
-    succ(prev, next) :-
+    // whole expression after end
+    edge(prev, next) :-
         IndexRangeAccess_endExpression(next, prev, 1).
 
-    // Case 2: Only start expression
-    succ(prev, next) :-
+    // Case 2: Only start expression - whole expr after end
+    edge(prev, next) :-
         IndexRangeAccess_endExpression(next, _, 0),
         IndexRangeAccess_startExpression(next, prev, 1).
 
     // Case 3: Only end expression
-    succ(prev, next) :-
+    edge(prev, next) :-
         IndexRangeAccess_baseExpression(iraId, prev),
         IndexRangeAccess_startExpression(iraId, _, 0),
         IndexRangeAccess_endExpression(iraId, eeId, 1),
         succ_first(eeId, next).
 
     // Case 4: No start, no end expression
-    succ(prev, next) :-
+    edge(prev, next) :-
         IndexRangeAccess_baseExpression(next, prev),
         IndexRangeAccess_startExpression(next, _, 0),
         IndexRangeAccess_endExpression(next, _, 0).
 
     // ---- Assignment
-    // TODO: Is the left or right side of the assignment evaluated first?
+    // Right hand side evaluated first
     succ_first(aId, first) :-
-        Assignment_leftHandSide(aId, lhsId),
-        succ_first(lhsId, first).
-
-    succ(prev, next) :-
-        Assignment_leftHandSide(aId, prev),
         Assignment_rightHandSide(aId, rhsId),
+        succ_first(rhsId, first).
+
+    edge(prev, next) :-
+        Assignment_rightHandSide(aId, prev),
+        Assignment_leftHandSide(aId, rhsId),
         succ_first(rhsId, next).
 
-    succ(prev, next) :-
-        Assignment_rightHandSide(next, prev).
+    edge(prev, next) :-
+        Assignment_leftHandSide(next, prev).
 
     // ---- FunctionCallOptions
-    // TODO: The ordering for FunctionCallOptions is not quite correct.
-    // We just enforce that the options are evaluated before the base expression.
-    // We don't enforce an ordering between the option expression, or that they are 
-    // all evaluated (instead that one of them is non-deterministically evaluted)
+    // For FunctionCallOptions we first evaluate base then options left to right
+    // Since solc-typed-ast doesn't preserve order we can't exactly enforce this. 
+    // As a hack just enforce the order gas, value, salt
     succ_first(fcoptsId, first) :-
-        FunctionCallOptions_options(fcoptsId, _, optId),
-        succ_first(optId, first).
-
-    succ(prev, next) :-
-        FunctionCallOptions_options(fcoptsId, _, prev),
         FunctionCallOptions_expression(fcoptsId, baseId),
-        succ_first(baseId, next).
+        succ_first(baseId, first).
 
+    // Gas is first
+    edge(prev, next) :-
+        FunctionCallOptions_expression(fcoptsId, prev),
+        FunctionCallOptions_options(fcoptsId, "gas", optId),
+        succ_first(optId, next).
 
-    succ(prev, next) :-
-        FunctionCallOptions_expression(next, prev).
+    edge(prev, next) :-
+        FunctionCallOptions_options(fcoptsId, "gas", prev),
+        FunctionCallOptions_options(fcoptsId, "value", valueId),
+        succ_first(valueId, next).
+
+    edge(prev, next) :-
+        FunctionCallOptions_options(fcoptsId, "gas", prev),
+        !FunctionCallOptions_options(fcoptsId, "value", _),
+        FunctionCallOptions_options(fcoptsId, "salt", valueId),
+        succ_first(valueId, next).
+
+    edge(prev, next) :-
+        FunctionCallOptions_options(next, "gas", prev),
+        !FunctionCallOptions_options(next, "value", _),
+        !FunctionCallOptions_options(next, "salt", _).
+
+    // Value is second
+    edge(prev, next) :-
+        FunctionCallOptions_expression(fcoptsId, prev),
+        !FunctionCallOptions_options(fcoptsId, "gas", _),
+        FunctionCallOptions_options(fcoptsId, "value", optId),
+        succ_first(optId, next).
+
+    edge(prev, next) :-
+        FunctionCallOptions_options(fcoptsId, "value", prev),
+        FunctionCallOptions_options(fcoptsId, "salt", valueId),
+        succ_first(valueId, next).
+
+    edge(prev, next) :-
+        FunctionCallOptions_options(next, "value", prev),
+        !FunctionCallOptions_options(next, "salt", _).
+
+    // Salt is last
+    edge(prev, next) :-
+        FunctionCallOptions_expression(fcoptsId, prev),
+        !FunctionCallOptions_options(fcoptsId, "gas", _),
+        !FunctionCallOptions_options(fcoptsId, "value", _),
+        FunctionCallOptions_options(fcoptsId, "salt", optId),
+        succ_first(optId, next).
+
+    edge(prev, next) :-
+        FunctionCallOptions_options(next, "salt", prev).
 
     // ---- FunctionCall
-    // TODO: Is the callee or arguments evaluated first?
+    // For external calls base is evaluated first, then agruments.
+    // For internal calls its arguments than base
+    // Arguments are evaluated left-to-right
+
+    // Case 1: ExternalCall
+    // Callee first
     succ_first(fcId, first) :-
+        externalCall(fcId),
         FunctionCall_expression(fcId, exprId),
         succ_first(exprId, first).
 
-    // Has arguments - after base the whole call executes
-    succ(prev, next) :-
+    // Then args (if any)
+    edge(prev, next) :-
+        externalCall(fcId),
         FunctionCall_expression(fcId, prev),
         FunctionCall_arguments(fcId, firstArgId, 0),
         succ_first(firstArgId, next).
 
-    // No arguments case - after base the whole call executes
-    succ(prev, next) :-
+    // if no args after base the whole call executes
+    edge(prev, next) :-
+        externalCall(next),
         FunctionCall_expression(next, prev),
         (!FunctionCall_arguments(next, _, 0)).
 
-    // Ordering between args
-    succ(prev, next) :-
+    // Ordering between args - same for internal and external calls
+    edge(prev, next) :-
         FunctionCall_arguments(fcId, prev, i),
         FunctionCall_arguments(fcId, nextArg, i + 1),
         succ_first(nextArg, next).
 
     // After last arg whole call executes
-    succ(prev, next) :-
+    edge(prev, next) :-
+        externalCall(next),
         FunctionCall_arguments(next, prev, i),
         (!FunctionCall_arguments(next, _, i + 1)).
+
+    // Case 2: Internal call - first args then base
+
+    // Arguments are first
+    succ_first(fcId, first) :-
+        internalCall(fcId),
+        FunctionCall_arguments(fcId, firstArgId, 0),
+        succ_first(firstArgId, first).
+
+    // If no args than base is first
+    succ_first(fcId, first) :-
+        internalCall(fcId),
+        !FunctionCall_arguments(fcId, _, 0),
+        FunctionCall_expression(fcId, baseId),
+        succ_first(baseId, first).
+
+    // After last argument is the base
+    edge(prev, next) :-
+        internalCall(fcId),
+        FunctionCall_arguments(fcId, prev, i),
+        (!FunctionCall_arguments(fcId, _, i + 1)),
+        FunctionCall_expression(fcId, baseId),
+        succ_first(baseId, next).
+
+    // After the base is the whole call
+    edge(prev, next) :-
+        internalCall(fcId),
+        FunctionCall_expression(next, prev).
 
     // ---- MemberAccess
     succ_first(maId, first) :-
         MemberAccess_expression(maId, baseId),
         succ_first(baseId, first).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         MemberAccess_expression(next, prev).
 
     // NewExpression
@@ -198,32 +283,27 @@
         NewExpression(first).
 
     // Tuple expression
-    // TODO: What is the order of evaluation of elements?
     // Case 1: Non-empty tuple
     succ_first(teId, first) :-
         TupleExpression_components(teId, firstCompId, 0, _),
         succ_first(firstCompId, first).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         TupleExpression_components(teId, prev, i, _),
         TupleExpression_components(teId, nextComp, i+1, _),
         succ_first(nextComp, next).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         TupleExpression_components(next, prev, i, _),
         (!TupleExpression_components(next, _, i+1, _)).
 
-    // Case 2: Non-empty tuple
+    // Case 2: Empty tuple
     succ_first(teId, teId) :-
         TupleExpression(teId),
         !TupleExpression_components(teId, _, _, _).
 
     // Statements succ
     // ---------- HELPERS -------------
-    // True if nd is a checked or unchecked block
-    .decl isBlock(nd: id) 
-    isBlock(nd) :- (Block(nd) ; UncheckedBlock(nd)).
-
     // True if nd is a "fall-through" statement (i.e. if control-flow may continue to the next statement).
     .decl fallThrough(node: id)
     // Non-block fall-through statements
@@ -257,24 +337,24 @@
 
     // Control flow goes from one statement to the next in a block, if the prev
     // is fall-through
-    succ(prev, next) :-
+    edge(prev, next) :-
         Block(bId), Block_statements(bId, prev, i), Block_statements(bId, nextStmt, i+1),
         fallThrough(prev),
         succ_first(nextStmt, next).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         UncheckedBlock(bId), UncheckedBlock_statements(bId, prev, i), UncheckedBlock_statements(bId, nextStmt, i+1),
         fallThrough(prev),
         succ_first(nextStmt, next).
 
     // The block is considered executed, after the last statement executes, if
     // the last statement is fall-through
-    succ(prev, next) :-
+    edge(prev, next) :-
         Block_statements(next, prev, i),
         (!Block_statements(next, _, i+1)),
         fallThrough(prev).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         UncheckedBlock_statements(next, prev, i),
         (!UncheckedBlock_statements(next, _, i+1)),
         fallThrough(prev).
@@ -284,7 +364,7 @@
         ExpressionStatement_expression(exprStmtId, exprId),
         succ_first(exprId, first).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         ExpressionStatement_expression(next, prev).
 
     // ---- IfStatement
@@ -294,28 +374,27 @@
         succ_first(cId, first).
 
     // After the condition the true body may execute
-    succ(prev, next) :-
+    edge(prev, next) :-
         IfStatement_condition(ifId, prev),
         IfStatement_trueBody(ifId, trueId),
         succ_first(trueId, next).
 
     // After the condition the false body may execute
-    succ(prev, next) :-
+    edge(prev, next) :-
         IfStatement_condition(ifId, prev),
         IfStatement_falseBody(ifId, falseId, 1),
         succ_first(falseId, next).
 
     // After the true body, the whole if statement is considered executed
-    succ(prev, next) :-
+    edge(prev, next) :-
         IfStatement_trueBody(next, prev).
 
     // After the false body, the whole if statement is considered executed
-    succ(prev, next) :-
+    edge(prev, next) :-
         IfStatement_falseBody(next, prev, 1).
 
-
     // If there is no false body, after the condition the whole if statement may be executed
-    succ(prev, next) :-
+    edge(prev, next) :-
         IfStatement_condition(next, prev),
         IfStatement_falseBody(next, _, 0).
 
@@ -324,7 +403,7 @@
         Break(brId).
 
     // After a Break the closest enclosing loop is considered executed
-    succ(prev, next) :-
+    edge(prev, next) :-
         Break(prev),
         enclosingLoop(prev, next).
 
@@ -332,9 +411,9 @@
     succ_first(cId, cId) :-
         Continue(cId).
 
-    // After continue, we execute the condition of the closest loop
+    // After continue, we continue execution at the next iteration of the next loop
     // (if its while/do while)
-    succ(prev, next) :-
+    edge(prev, next) :-
         Continue(prev),
         enclosingLoop(prev, loopId),
         (
@@ -344,14 +423,14 @@
         succ_first(condId, next).
 
     // After continue we execute the increment statement if there is one, of the closeset `for` loop 
-    succ(prev, next) :-
+    edge(prev, next) :-
         Continue(prev),
         enclosingLoop(prev, loopId),
         ForStatement_loopExpression(loopId, loopExpr, 1),
         succ_first(loopExpr, next).
 
     // After continue we execute the condtion, if there is one, of the closeset `for` loop without an increment statement
-    succ(prev, next) :-
+    edge(prev, next) :-
         Continue(prev),
         enclosingLoop(prev, loopId),
         ForStatement_loopExpression(loopId, _, 0),
@@ -359,7 +438,7 @@
         succ_first(cond, next).
 
     // After continue we execute the body of the closeset `for` loop without an increment statement or condition
-    succ(prev, next) :-
+    edge(prev, next) :-
         Continue(prev),
         enclosingLoop(prev, loopId),
         ForStatement_loopExpression(loopId, _, 0),
@@ -374,17 +453,17 @@
         succ_first(cId, first).    
 
     // After the condition we can execute the body
-    succ(prev, next) :-
+    edge(prev, next) :-
         WhileStatement_condition(wsId, prev),
         WhileStatement_body(wsId, bodyId),
         succ_first(bodyId, next).
 
     // After the condition we can finish executing the loop
-    succ(prev, next) :-
+    edge(prev, next) :-
         WhileStatement_condition(next, prev).
 
     // After the body we execute the condition again
-    succ(prev, next) :-
+    edge(prev, next) :-
         WhileStatement_body(wsId, prev),
         WhileStatement_condition(wsId, next).
 
@@ -395,17 +474,17 @@
         succ_first(bodyId, first).
 
     // After the body we always execute the condition
-    succ(prev, next) :-
+    edge(prev, next) :-
         DoWhileStatement_body(dwId, prev),
         DoWhileStatement_condition(dwId, condId),
         succ_first(condId, next).
 
     // After the condition we may execute the body or consider the whole statement executed.
-    succ(prev, next) :-
+    edge(prev, next) :-
         DoWhileStatement_condition(dwId, prev),
         DoWhileStatement_body(dwId, next).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         DoWhileStatement_condition(next, prev).
 
     // --- ForStatement
@@ -428,59 +507,59 @@
         succ_first(body, first).
 
     // After an initialization statement we execute the condition (if there is one)
-    succ(prev, next) :-
+    edge(prev, next) :-
         ForStatement_initializationExpression(fsId, prev, 1),
         ForStatement_condition(fsId, cId, 1),
         succ_first(cId, next).
 
     // After an initialization statement we execute the body (if there is no condition)
-    succ(prev, next) :-
+    edge(prev, next) :-
         ForStatement_initializationExpression(fsId, prev, 1),
         ForStatement_condition(fsId, _, 0),
         ForStatement_body(fsId, body),
         succ_first(body, next).
 
-    // After the condition we execute the body
-    succ(prev, next) :-
+    // After the condition we may execute the body
+    edge(prev, next) :-
         ForStatement_condition(fsId, prev, 1),
         ForStatement_body(fsId, body),
         succ_first(body, next).
 
     // After the body we execute the loop expression (if there is one)
-    succ(prev, next) :-
+    edge(prev, next) :-
         ForStatement_body(fsId, prev),
         ForStatement_loopExpression(fsId, leId, 1),
         succ_first(leId, next).
 
     // After the body we execute the condition (if there is no loop expression)
-    succ(prev, next) :-
+    edge(prev, next) :-
         ForStatement_body(fsId, prev),
         ForStatement_loopExpression(fsId, leId, 0),
         ForStatement_condition(fsId, condId, 1),
         succ_first(condId, next).
 
     // After the body we execute the body again (if there is no loop expression or condition)
-    succ(prev, next) :-
+    edge(prev, next) :-
         ForStatement_body(fsId, prev),
         ForStatement_loopExpression(fsId, leId, 0),
         ForStatement_condition(fsId, condId, 0),
         succ_first(prev, next).
 
     // After the loop expression we execute the condition (if there is one)
-    succ(prev, next) :-
+    edge(prev, next) :-
         ForStatement_loopExpression(fsId, prev, 1),
         ForStatement_condition(fsId, condId, 1),
         succ_first(condId, next).
 
     // After the loop expression we execute the body (if there is no condition)
-    succ(prev, next) :-
+    edge(prev, next) :-
         ForStatement_loopExpression(fsId, prev, 1),
         ForStatement_condition(fsId, _, 0),
         ForStatement_body(fsId, body),
         succ_first(body, next).
 
     // After the condition we may exit the loop
-    succ(prev, next) :-
+    edge(prev, next) :-
         ForStatement_condition(next, prev, 1).
 
     // ---- InlineAssembly
@@ -495,7 +574,7 @@
     succ_first(retId, retId) :-
         Return_expression(retId, _, 0).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         Return_expression(next, prev, 1).
 
     // ---- RevertStatement
@@ -503,7 +582,7 @@
         RevertStatement_errorCall(revId, callId),
         succ_first(callId, first).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         RevertStatement_errorCall(next, prev).
 
     // ---- Throw
@@ -517,13 +596,13 @@
         succ_first(callId, first).
 
     // After the external call in the try we may execute any of the clauses
-    succ(prev, next) :-
+    edge(prev, next) :-
         TryStatement_externalCall(tsId, prev),
         TryStatement_clauses(tsId, clauseId, _),
         succ_first(clauseId, next).
 
     // After any of the clauses the whole try/catch is finished
-    succ(prev, next) :-
+    edge(prev, next) :-
         TryStatement_clauses(next, prev, _).
 
     // ---- TryCatchClause
@@ -531,7 +610,7 @@
         TryCatchClause_block(tccId, blockId),
         succ_first(blockId, first).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         TryCatchClause_block(next, prev).
 
     // ---- VariableDeclarationStatement
@@ -542,7 +621,7 @@
     succ_first(vdsId, vdsId) :-
         VariableDeclarationStatement_initialValue(vdsId, _, 0).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         VariableDeclarationStatement_initialValue(next, prev, 1).
 
     // --- PlaceholderStatement
@@ -555,5 +634,9 @@
         EmitStatement_eventCall(esId, evCall),
         succ_first(evCall, first).
 
-    succ(prev, next) :-
+    edge(prev, next) :-
         EmitStatement_eventCall(next, prev).
+
+    .decl succ(prev: id, next: id)
+    succ(prev, next) :- path(prev, next, _).
+}

@@ -103,7 +103,7 @@ const staticPreamble = `
 .decl parent(parentId: id, childId: id)
 .decl src(id: id, src: symbol)
 .decl Node(id: id)
-.decl ExternalCall(id: FunctionCallId)
+.decl externalCall(id: FunctionCallId)
 .decl ConstantExpression(id: id)
 .decl CompilerVersion(major: number, minor: number, patch: number)
 .decl Expression(id: id)
@@ -879,7 +879,7 @@ function buildFactInvocation(className, constructor, baseName) {
 
     if (className === "FunctionCall") {
         res += `if (infer.isFunctionCallExternal(nd)) {
-            res.push(\`ExternalCall(\${nd.id}).\`);
+            res.push(\`externalCall(\${nd.id}).\`);
         }
 `;
     }

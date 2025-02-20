@@ -20,8 +20,7 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
-import { analyze, buildDatalog, detect } from "../lib";
-import * as dl from "souffle.ts";
+import { analyze, buildDatalog, getRelation } from "../lib";
 
 const pkg = require("../../package.json");
 
@@ -83,7 +82,6 @@ async function main() {
             "--download-compilers <compilerKind...>",
             `Download specified kind of supported compilers to compiler cache. Supports multiple entries.`
         )
-        .option("--run-detectors", "Run defined detecotrs")
         .option("--dump", "Dump generated DL")
         .option(
             "--dump-analyses <analysisName...>",
@@ -293,22 +291,11 @@ async function main() {
         return;
     }
 
-    if (options.runDetectors) {
-        const issues = await detect(units, reader.context, infer);
-        console.log(issues);
-
-        return;
-    }
-
     if (options.dumpAnalyses) {
-        const instance = (await analyze(
-            units,
-            infer,
-            "csv",
-            options.dumpAnalyses
-        )) as dl.SouffleCSVInstance;
-        const output = await instance.allFacts();
-        instance.release();
+        const relations = options.dumpAnalyses.map(getRelation);
+        const res = await analyze(units, infer, "csv", relations);
+        const output = await res.allFacts();
+        res.release();
 
         for (const analysis of options.dumpAnalyses) {
             const facts = output.get(analysis);

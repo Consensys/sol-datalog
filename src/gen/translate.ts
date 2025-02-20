@@ -171,7 +171,7 @@ export function translateASTNodeInternal(nd: sol.ASTNode, infer: sol.InferType):
         res.push(`FunctionCall_kind(${nd.id}, ${translateVal(nd.kind)}).`);
         res.push(`FunctionCall_expression(${nd.id}, ${translateVal(nd.vExpression)}).`);
         if (infer.isFunctionCallExternal(nd)) {
-            res.push(`ExternalCall(${nd.id}).`);
+            res.push(`externalCall(${nd.id}).`);
         }
         if (sol.isConstant(nd)) {
             res.push(`ConstantExpression(${nd.id}).`);

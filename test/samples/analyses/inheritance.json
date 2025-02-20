@@ -1,5 +1,5 @@
 {
-    "inherits": {
+    "inh.inherits": {
         "fmt": "{0}.name inherits from {1}.name",
         "data": [
             "Base inherits from Base",
@@ -13,7 +13,7 @@
             "Child inherits from Child"
         ]
     },
-    "inheritsStrict": {
+    "inh.inheritsStrict": {
         "fmt": "{0}.name inherits strictly from {1}.name",
         "data": [
             "Base1 inherits strictly from Base",
@@ -23,7 +23,7 @@
             "Child inherits strictly from Base2"
         ]
     },
-    "overrides": {
+    "inh.overrides": {
         "fmt": "{0}.name overrides {1}.name",
         "data": ["foo overrides foo", "boo overrides boo", "Foo overrides Foo"]
     }

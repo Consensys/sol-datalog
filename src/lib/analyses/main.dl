@@ -1,0 +1,3 @@
+.init inh = Inheritance
+.init cg = CallGraph
+.init cfg = CFG

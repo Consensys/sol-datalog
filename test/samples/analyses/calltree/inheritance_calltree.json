@@ -1,5 +1,5 @@
 {
-    "callsPath": {
+    "cg.path": {
         "fmt": "{0}.vScope.name {0}.name calls {1}.vScope.name {1}.name via ${2}",
         "data": [
             "Base foo calls Base boo via $[Base:foo,Base:boo]",

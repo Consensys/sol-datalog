@@ -4,7 +4,6 @@ import { datalogFromUnits } from "../translate";
 import { searchRecursive } from "../utils";
 import { ANALYSES_DIR } from "../analyses";
 import { DETECTORS_DIR } from "../detectors";
-import { Issue, getIssues, loadDetectors, parseTemplateSignature } from "../detector";
 import * as dl from "souffle.ts";
 import { join } from "path";
 
@@ -51,37 +50,9 @@ export async function analyze(
     units: sol.SourceUnit[],
     infer: sol.InferType,
     mode: dl.SouffleOutputType,
-    outputRelations: string[]
-): Promise<dl.SouffleCSVInstance | dl.SouffleSQLiteInstance> {
+    outputRelations: dl.Relation[]
+): Promise<dl.Result> {
     const datalog = buildDatalog(units, infer);
 
-    const instance =
-        mode === "csv"
-            ? new dl.SouffleCSVInstance(datalog, DIST_SO_DIR)
-            : new dl.SouffleSQLiteInstance(datalog, DIST_SO_DIR);
-
-    await instance.run(outputRelations);
-    return instance;
-}
-
-/**
- * Helper function to run all detectors and ouput just their results
- */
-export async function detect(
-    units: sol.SourceUnit[],
-    context: sol.ASTContext,
-    infer: sol.InferType
-): Promise<Issue[]> {
-    const detectorTemplates = loadDetectors();
-    const outputRelations = detectorTemplates.map(
-        (template) => parseTemplateSignature(template.relationSignature)[0]
-    );
-
-    const instance = (await analyze(units, infer, "csv", outputRelations)) as dl.SouffleCSVInstance;
-    const outputs = await instance.allFacts();
-    instance.release();
-
-    const res = getIssues(outputs, context);
-
-    return res;
+    return await dl.run(datalog, outputRelations, mode, DIST_SO_DIR);
 }

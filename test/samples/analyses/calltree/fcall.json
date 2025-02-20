@@ -1,5 +1,5 @@
 {
-    "callsPath": {
+    "cg.path": {
         "fmt": "{0}.name calls {1}.name via {2}",
         "data": [
             "a calls c via [Foo:a,Foo:c]",

@@ -1,7 +1,7 @@
 import expect from "expect";
 import fse from "fs-extra";
 import * as sol from "solc-typed-ast";
-import { OutputRelations, analyze } from "../src";
+import { analyze, getRelation } from "../src";
 import { Fact, searchRecursive } from "../src/lib/utils";
 import * as dl from "souffle.ts";
 
@@ -16,11 +16,6 @@ interface AnalysesTest {
 /**
  * Remove duplicate rows.
  */
-function dedup(facts: any[][]): any[][] {
-    const m = new Map<string, any[]>(facts.map((row) => [dl.pp(row), row]));
-
-    return [...m.values()];
-}
 
 /**
  * Sanitize the facts for a given relation by converting all non-primitive
@@ -36,8 +31,8 @@ export function sanitize(relation: dl.Relation, facts: any[][]): any[][] {
             .map(([, idx]) => idx)
     );
 
-    return dedup(
-        facts.map((values) => values.map((v, idx) => (nonPrimitiveFieldIdxs.has(idx) ? null : v)))
+    return facts.map((values) =>
+        values.map((v, idx) => (nonPrimitiveFieldIdxs.has(idx) ? null : v))
     );
 }
 
@@ -70,20 +65,16 @@ describe("Analyses", () => {
                 }) as AnalysesTest;
             });
 
-            it("Detectors produce expected results", async () => {
-                const targetAnalyses = [...Object.keys(expectedOutput)];
+            it("Analyses expected results", async () => {
+                const targetAnalyses = [...Object.keys(expectedOutput).map(getRelation)];
                 const infer = new sol.InferType(version);
-                const instance = (await analyze(
-                    units,
-                    infer,
-                    "csv",
-                    targetAnalyses
-                )) as dl.SouffleCSVInstance;
-                const analysisResults = await instance.allFacts();
-                instance.release();
+                const res = await analyze(units, infer, "csv", targetAnalyses);
+
+                const facts = await res.allFacts();
+                res.release();
 
                 for (const [key, val] of Object.entries(expectedOutput)) {
-                    const received = (analysisResults.get(key) as dl.Fact[]).map((f) =>
+                    const received = (facts.get(key) as dl.Fact[]).map((f) =>
                         new Fact(f, reader.context).fmt(val.fmt)
                     );
 
@@ -92,56 +83,4 @@ describe("Analyses", () => {
             });
         });
     }
-});
-
-describe("Analyses work in sqlite mode", () => {
-    const json = samples[0];
-    const sample = json.replace(".json", ".sol");
-
-    describe(sample, () => {
-        let units: sol.SourceUnit[];
-        let expectedOutput: OutputRelations;
-        let reader: sol.ASTReader;
-        let version: string;
-
-        before(async () => {
-            reader = new sol.ASTReader();
-            const result = await sol.compileSol(sample, "auto");
-
-            const data = result.data;
-            const errors = sol.detectCompileErrors(data);
-
-            expect(errors).toHaveLength(0);
-
-            version = result.compilerVersion as string;
-            units = reader.read(data);
-
-            expect(units.length).toBeGreaterThanOrEqual(1);
-
-            expectedOutput = fse.readJSONSync(json, {
-                encoding: "utf-8"
-            }) as OutputRelations;
-        });
-
-        it("Detectors produce expected results", async () => {
-            const targetAnalyses = [...Object.keys(expectedOutput)];
-            const infer = new sol.InferType(version);
-            const instance = (await analyze(
-                units,
-                infer,
-                "sqlite",
-                targetAnalyses
-            )) as dl.SouffleSQLiteInstance;
-
-            for (const [key, val] of Object.entries(expectedOutput)) {
-                const received = (await instance.relationFacts(key)).map((f) =>
-                    new Fact(f, reader.context).fmt(val.fmt)
-                );
-
-                expect(received).toEqual(val.data);
-            }
-
-            instance.release();
-        });
-    });
 });

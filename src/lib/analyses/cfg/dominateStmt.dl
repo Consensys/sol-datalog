@@ -1,103 +1,95 @@
-// Helper relation for expressing the CFG domination relation only between statements (and modifier invocations)
-.decl dominateStmt(pred: id, succ: id)
+.comp DominateStmt : IdGraph {
+    // ForStatement
+    // Initialization dominates the body when present
+    edge(pred, succ) :-
+        ForStatement(fsId),
+        ForStatement_initializationExpression(fsId, pred, 1),
+        ForStatement_body(fsId, succ).
 
-// ForStatement
-// Initialization dominates the body when present
-dominateStmt(pred, succ) :-
-    ForStatement(fsId),
-    ForStatement_initializationExpression(fsId, pred, 1),
-    ForStatement_body(fsId, succ).
+    // Initialization dominates condition check when both present 
+    edge(pred, succ) :-
+        ForStatement(fsId),
+        ForStatement_initializationExpression(fsId, pred, 1),
+        ForStatement_condition(fsId, succ, 1).
 
-// Initialization dominates condition check when both present 
-dominateStmt(pred, succ) :-
-    ForStatement(fsId),
-    ForStatement_initializationExpression(fsId, pred, 1),
-    ForStatement_condition(fsId, succ, 1).
+    // Initialization dominates loop expr when both present 
+    edge(pred, succ) :-
+        ForStatement(fsId),
+        ForStatement_initializationExpression(fsId, pred, 1),
+        ForStatement_loopExpression(fsId, succ, 1).
 
-// Initialization dominates loop expr when both present 
-dominateStmt(pred, succ) :-
-    ForStatement(fsId),
-    ForStatement_initializationExpression(fsId, pred, 1),
-    ForStatement_loopExpression(fsId, succ, 1).
+    // All stmts dominating the for dominate the init statement
+    edge(pred, succ) :-
+        ForStatement(fsId),
+        ForStatement_initializationExpression(fsId, succ, 1),
+        edge(pred, fId).
 
-// All stmts dominating the for dominate the init statement
-dominateStmt(pred, succ) :-
-    ForStatement(fsId),
-    ForStatement_initializationExpression(fsId, succ, 1),
-    dominateStmt(pred, fId).
+    // No init statement - all stmts dominating the for dominate the body
+    edge(pred, succ) :-
+        ForStatement(fsId),
+        ForStatement_initializationExpression(fsId, _, 0),
+        ForStatement_body(fsId, succ),
+        edge(pred, fId).
 
-// No init statement - all stmts dominating the for dominate the body
-dominateStmt(pred, succ) :-
-    ForStatement(fsId),
-    ForStatement_initializationExpression(fsId, _, 0),
-    ForStatement_body(fsId, succ),
-    dominateStmt(pred, fId).
+    // TryStatement
+    edge(pred, succ) :-
+        TryStatement(tId),
+        edge(pred, tId),
+        TryStatement_clauses(tId, cId, _),
+        TryCatchClause_block(cId, succ).
 
-// TryStatement
-dominateStmt(pred, succ) :-
-    TryStatement(tId),
-    dominateStmt(pred, tId),
-    TryStatement_clauses(tId, cId, _),
-    TryCatchClause_block(cId, succ).
+    // BlockStatement
+    edge(pred, succ) :-
+        Block(bId),
+        edge(pred, bId),
+        Block_statements(bId, succ, 0).
 
-// BlockStatement
-dominateStmt(pred, succ) :-
-    Block(bId),
-    dominateStmt(pred, bId),
-    Block_statements(bId, succ, 0).
+    edge(pred, succ) :-
+        Block(bId),
+        Block_statements(bId, pred, i),
+        Block_statements(bId, succ, i + 1).
 
-dominateStmt(pred, succ) :-
-    Block(bId),
-    Block_statements(bId, pred, i),
-    Block_statements(bId, succ, i + 1).
+    // UncheckedBlockStatement
+    edge(pred, succ) :-
+        UncheckedBlock(bId),
+        edge(pred, bId),
+        UncheckedBlock_statements(bId, succ, 0).
 
-// UncheckedBlockStatement
-dominateStmt(pred, succ) :-
-    UncheckedBlock(bId),
-    dominateStmt(pred, bId),
-    UncheckedBlock_statements(bId, succ, 0).
+    edge(pred, succ) :-
+        UncheckedBlock(bId),
+        UncheckedBlock_statements(bId, pred, i),
+        UncheckedBlock_statements(bId, succ, i + 1).
 
-dominateStmt(pred, succ) :-
-    UncheckedBlock(bId),
-    UncheckedBlock_statements(bId, pred, i),
-    UncheckedBlock_statements(bId, succ, i + 1).
+    // WhileStatement
+    edge(pred, succ) :-
+        WhileStatement_body(wId, succ),
+        edge(pred, wId).
 
-// WhileStatement
-dominateStmt(pred, succ) :-
-    WhileStatement_body(wId, succ),
-    dominateStmt(pred, wId).
+    // IfStatement
+    edge(pred, succ) :-
+        IfStatement_trueBody(ifId, succ),
+        edge(pred, ifId).
 
-// IfStatement
-dominateStmt(pred, succ) :-
-    IfStatement_trueBody(ifId, succ),
-    dominateStmt(pred, ifId).
+    edge(pred, succ) :-
+        IfStatement_falseBody(ifId, succ, 1),
+        edge(pred, ifId).
 
-dominateStmt(pred, succ) :-
-    IfStatement_falseBody(ifId, succ, 1),
-    dominateStmt(pred, ifId).
+    // DoWhile statement
+    edge(pred, succ) :-
+        DoWhileStatement_body(dwId, succ),
+        edge(pred, dwId).
 
-// DoWhile statement
-dominateStmt(pred, succ) :-
-    DoWhileStatement_body(dwId, succ),
-    dominateStmt(pred, dwId).
+    // ModifierInvocations
+    edge(pred, succ) :-
+        FunctionDefinition(id),
+        FunctionDefinition_modifiers(id, pred, i),
+        modifierInvocation_isModifier(pred),
+        FunctionDefinition_modifiers(id, succ, i + 1),
+        modifierInvocation_isModifier(pred).
 
-// ModifierInvocations
-dominateStmt(pred, succ) :-
-    FunctionDefinition(id),
-    FunctionDefinition_modifiers(id, pred, i),
-    modifierInvocation_isModifier(pred),
-    FunctionDefinition_modifiers(id, succ, i + 1),
-    modifierInvocation_isModifier(pred).
-
-// ModifierInvocations
-dominateStmt(pred, succ) :-
-    FunctionDefinition_body(id, succ, 1),
-    FunctionDefinition_modifiers(id, pred, i),
-    modifierInvocation_isModifier(pred).
-
-// Transitivity
-dominateStmt(pred, succ) :-
-    dominateStmt(pred, x),
-    dominateStmt(x, succ).
-
-// @todo Base constructors
+    // ModifierInvocations
+    edge(pred, succ) :-
+        FunctionDefinition_body(id, succ, 1),
+        FunctionDefinition_modifiers(id, pred, i),
+        modifierInvocation_isModifier(pred).
+}
