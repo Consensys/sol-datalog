@@ -1,0 +1,30 @@
+{
+    "inh.inherits": {
+        "fmt": "{0}.name inherits from {1}.name",
+        "data": [
+            "Base inherits from Base",
+            "Base1 inherits from Base",
+            "Base1 inherits from Base1",
+            "Base2 inherits from Base",
+            "Base2 inherits from Base2",
+            "Child inherits from Base",
+            "Child inherits from Base1",
+            "Child inherits from Base2",
+            "Child inherits from Child"
+        ]
+    },
+    "inh.inheritsStrict": {
+        "fmt": "{0}.name inherits strictly from {1}.name",
+        "data": [
+            "Base1 inherits strictly from Base",
+            "Base2 inherits strictly from Base",
+            "Child inherits strictly from Base",
+            "Child inherits strictly from Base1",
+            "Child inherits strictly from Base2"
+        ]
+    },
+    "inh.overrides": {
+        "fmt": "{0}.name overrides {1}.name",
+        "data": ["foo overrides foo", "boo overrides boo", "Foo overrides Foo"]
+    }
+}

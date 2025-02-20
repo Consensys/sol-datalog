@@ -3,7 +3,7 @@ import fse from "fs-extra";
 import path from "path";
 import * as sol from "solc-typed-ast";
 import * as dl from "souffle.ts";
-import { analyze } from "../src";
+import { analyze, getRelation } from "../src";
 import { searchRecursive } from "../src/lib/utils";
 
 require("dotenv").config();
@@ -29,14 +29,6 @@ const samples = searchRecursive(
 );
 
 samples.push(...searchRecursive("test/samples", (fileName) => fileName.endsWith(".sol")));
-//samples = ["/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/builtins_0426.sol"];
-/*
-samples = samples.slice(
-    samples.indexOf(
-        "/home/dimo/work/consensys/solc-typed-ast/test/samples/solidity/statements/for_0413.sol"
-    )
-);
-*/
 const verbose = false;
 
 export type NdGraph = Map<number, Set<number>>;
@@ -214,14 +206,16 @@ describe("Test succ relation for all samples", () => {
 
                 infer = new sol.InferType(result.compilerVersion as string);
 
-                const instance = (await analyze(units, infer, "csv", [
-                    "succ",
-                    "succ_first"
-                ])) as dl.SouffleCSVInstance;
-                const analysisResults = await instance.allFacts();
+                const res = await analyze(
+                    units,
+                    infer,
+                    "csv",
+                    ["cfg.succ.succ", "cfg.succ.succ_first"].map(getRelation)
+                );
+                const facts = await res.allFacts();
                 //instance.release();
-                succ = analysisResults.get("succ") as dl.Fact[];
-                succFirst = binIdRelnToGraph(analysisResults.get("succ_first") as dl.Fact[]);
+                succ = facts.get("cfg.succ.succ") as dl.Fact[];
+                succFirst = binIdRelnToGraph(facts.get("cfg.succ.succ_first") as dl.Fact[]);
                 g = binIdRelnToGraph(succ);
 
                 if (verbose) {

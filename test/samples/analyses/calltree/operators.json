@@ -1,0 +1,9 @@
+{
+    "cg.path": {
+        "fmt": "{0}.vScope.name {0}.name calls {1}.name via ${2}",
+        "data": [
+            "Foo main calls add via $[Foo:main,add]",
+            "Foo foo calls bwnot via $[Foo:foo,bwnot]"
+        ]
+    }
+}

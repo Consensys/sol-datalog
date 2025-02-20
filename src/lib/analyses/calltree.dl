@@ -1,24 +1,33 @@
-.decl callsDirectly(caller: FunctionDefinitionId, callee: FunctionDefinitionId)
-callsDirectly(caller, callee) :- 
-    FunctionDefinition(caller),
-    FunctionDefinition(callee),
-    FunctionCall(callId),
-    FunctionCall_expression(callId, exprId),
-    exprRefersTo(exprId, callee),
-    ancestor(caller, callId).
+.comp CallGraph : IdGraph {
+    // Simple call case
+    edge(caller, callee) :- 
+        FunctionDefinition(caller),
+        ancestor(caller, callId),
+        FunctionCall(callId),
+        FunctionCall_expression(callId, exprId),
+        exprRefersTo(exprId, callee),
+        FunctionDefinition(callee).
 
-.type CallPath = [ head: FunctionDefinitionId, tail: CallPath ]
-.functor isSubsequence(a: CallPath, b: CallPath):number stateful
+    // Calling a virtual function - include all overriding definitions
+    edge(caller, callee) :- 
+        FunctionDefinition(caller),
+        ancestor(caller, callId),
+        FunctionCall(callId),
+        FunctionCall_expression(callId, exprId),
+        exprRefersTo(exprId, calleeBaseDef),
+        FunctionDefinition(calleeBaseDef),
+        FunctionDefinition_virtual(calleeBaseDef, 1),
+        inh.overrides(callee, calleeBaseDef).
 
-.decl callsPath(caller: FunctionDefinitionId, callee: FunctionDefinitionId, path: CallPath)
+    // Calling a user-defined binary operator
+    edge(caller, callee) :-
+        FunctionDefinition(caller),
+        ancestor(caller, exprId),
+        BinaryOperation_userFunction(exprId, callee, 1).
 
-// Base case - if caller has a function call that refers to callee
-callsPath(caller, callee, [caller, [callee, nil]]) :-
-    callsDirectly(caller, callee).
-
-// Calls is transitive
-callsPath(caller, callee, [caller, p]) :-
-    callsDirectly(caller, x),
-    callsPath(x, callee, p).
-
-callsPath(x, y, p1) <= callsPath(x, y, p2) :- @isSubsequence(p2, p1) = 1.
+    // Calling a user-defined unary operator
+    edge(caller, callee) :-
+        FunctionDefinition(caller),
+        ancestor(caller, exprId),
+        UnaryOperation_userFunction(exprId, callee, 1).
+}

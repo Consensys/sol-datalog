@@ -1,83 +1,89 @@
-.decl dominate(pred: id, succ: id)
+.comp Dominate : IdGraph {
+    .init domStmt = DominateStmt
 
-/// Dominate inherits from dominateStmt for statements
-dominate(pred, succ) :-
-    dominateStmt(pred, succ).
+    /// Dominate inherits from dominateStmt for statements
+    edge(pred, succ) :- domStmt.edge(pred, succ).
 
-/// If statement A dominates statement B, A dominates all expressions in B
-dominate(pred, succ) :-
-    Statement(pred),
-    Statement(B),
-    dominateStmt(pred, B),
-    ancestor(B, succ),
-    Expression(succ).
+    /// If statement A dominates statement B, A dominates all expressions in B
+    edge(pred, succ) :-
+        Statement(pred),
+        Statement(B),
+        domStmt.edge(pred, B),
+        ancestor(B, succ),
+        Expression(succ).
 
-/// All expressions "syntactically" inside a statement must evaluate before its
-/// conisdered "executed"
-dominate(pred, succ) :-
-    Statement(succ),
-    ancestor(succ, pred),
-    Expression(pred).
+    /// All expressions "syntactically" inside a statement must evaluate before its
+    /// conisdered "executed"
+    edge(pred, succ) :-
+        Statement(succ),
+        ancestor(succ, pred),
+        Expression(pred).
 
-/// All expressions "syntactically" inside another expression must finish evaluating
-/// before the parent expression has evaluated
-dominate(pred, succ) :-
-    Expression(succ),
-    ancestor(succ, pred),
-    Expression(pred).
+    /// All expressions "syntactically" inside another expression must finish evaluating
+    /// before the parent expression has evaluated
+    edge(pred, succ) :-
+        Expression(succ),
+        ancestor(succ, pred),
+        Expression(pred).
 
-/// Assignment
-dominate(pred, succ) :-
-    Assignment(aid),
-    Assignment_leftHandSide(aid, succ),
-    Assignment_rightHandSide(aid, pred).
+    /// Assignment - right hand side before left
+    edge(pred, succ) :-
+        Assignment(aid),
+        Assignment_leftHandSide(aid, succ),
+        Assignment_rightHandSide(aid, pred).
 
-/// BinaryOperation
-dominate(pred, succ) :-
-    BinaryOperation(boId),
-    BinaryOperation_leftExpression(boId, pred),
-    BinaryOperation_rightExpression(boId, succ).
+    /// BinaryOperation - left to right order
+    edge(pred, succ) :-
+        BinaryOperation(boId),
+        BinaryOperation_leftExpression(boId, pred),
+        BinaryOperation_rightExpression(boId, succ).
 
-/// Conditional
-dominate(pred, succ) :-
-    Conditional(cId),
-    Conditional_condition(cId, pred),
-    Conditional_trueExpression(cId, succ).
+    /// Conditional - condition before branches
+    edge(pred, succ) :-
+        Conditional(cId),
+        Conditional_condition(cId, pred),
+        Conditional_trueExpression(cId, succ).
 
-dominate(pred, succ) :-
-    Conditional(cId),
-    Conditional_condition(cId, pred),
-    Conditional_falseExpression(cId, succ).
+    /// Conditional - condition before branches
+    edge(pred, succ) :-
+        Conditional(cId),
+        Conditional_condition(cId, pred),
+        Conditional_falseExpression(cId, succ).
 
 
-/// FunctionCall
-dominate(pred, succ) :-
-    FunctionCall(fcId),
-    FunctionCall_arguments(fcId, pred, i),
-    FunctionCall_arguments(fcId, succ, i + 1).
+    /// FunctionCall - arguments in left-to-right order
+    edge(pred, succ) :-
+        FunctionCall(fcId),
+        FunctionCall_arguments(fcId, pred, i),
+        FunctionCall_arguments(fcId, succ, i + 1).
 
-/// IndexAccess
-dominate(pred, succ) :-
-    IndexAccess(iaId),
-    IndexAccess_baseExpression(aId, succ),
-    IndexAccess_indexExpression(iaId, pred, 1).
+    /// IndexAccess index before base
+    edge(pred, succ) :-
+        IndexAccess(iaId),
+        IndexAccess_baseExpression(aId, succ),
+        IndexAccess_indexExpression(iaId, pred, 1).
 
-/// IndexRangeAccess
-dominate(pred, succ) :-
-    IndexRangeAccess(iraId), 
-    IndexRangeAccess_baseExpression(iraId, succ),
-    IndexRangeAccess_startExpression(iraId, pred, 1).
+    /// IndexRangeAccess - start before base
+    edge(pred, succ) :-
+        IndexRangeAccess(iraId), 
+        IndexRangeAccess_baseExpression(iraId, succ),
+        IndexRangeAccess_startExpression(iraId, pred, 1).
 
-dominate(pred, succ) :-
-    IndexRangeAccess(iraId), 
-    IndexRangeAccess_baseExpression(iraId, succ),
-    IndexRangeAccess_endExpression(iraId, pred, 1).
+    /// IndexRangeAccess - end before base
+    edge(pred, succ) :-
+        IndexRangeAccess(iraId), 
+        IndexRangeAccess_baseExpression(iraId, succ),
+        IndexRangeAccess_endExpression(iraId, pred, 1).
 
-/// TupleExpression
-dominate(pred, succ) :-
-    TupleExpression(tId),
-    TupleExpression_components(tId, pred, i, _),
-    TupleExpression_components(tId, succ, i + 1, _).
+    /// TupleExpression - left to right order
+    edge(pred, succ) :-
+        TupleExpression(tId),
+        TupleExpression_components(tId, pred, i, _),
+        TupleExpression_components(tId, succ, i + 1, _).
 
-/// Domination is transitive
-dominate(pred, succ) :- dominate(pred, x), dominate(x, succ).
+    .decl dominate(pred: id, succ: id)
+    dominate(pred, succ) :- path(pred, succ, _).
+
+    .decl dominateStmt(pred: id, succ: id)
+    dominateStmt(pred, succ) :- domStmt.path(pred, succ, _).
+}

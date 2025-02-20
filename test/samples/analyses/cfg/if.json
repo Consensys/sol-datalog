@@ -1,11 +1,14 @@
 {
-    "dominateStmt": [
-        [7, 13],
-        [7, 14],
-        [7, 17],
-        [7, 18],
-        [7, 19],
-        [7, 23],
-        [19, 23]
-    ]
+    "cfg.dom.dominateStmt": {
+        "fmt": "{0} dominates {1}",
+        "data": [
+            "VariableDeclarationStatement #7 dominates ExpressionStatement #13",
+            "VariableDeclarationStatement #7 dominates Block #14",
+            "VariableDeclarationStatement #7 dominates ExpressionStatement #17",
+            "VariableDeclarationStatement #7 dominates Block #18",
+            "VariableDeclarationStatement #7 dominates IfStatement #19",
+            "VariableDeclarationStatement #7 dominates VariableDeclarationStatement #23",
+            "IfStatement #19 dominates VariableDeclarationStatement #23"
+        ]
+    }
 }

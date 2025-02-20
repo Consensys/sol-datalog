@@ -20,7 +20,15 @@ import {
     downloadSupportedCompilers,
     isExact
 } from "solc-typed-ast";
-import { analyze, buildDatalog, getRelation } from "../lib";
+import {
+    analyze,
+    FunctionDefinitionId,
+    getRelation,
+    ModifierDefinitionId,
+    VariableDeclarationId
+} from "../lib";
+import { Fact } from "../lib/utils";
+import { Relation } from "souffle.ts";
 
 const pkg = require("../../package.json");
 
@@ -36,7 +44,7 @@ async function main() {
     const program = new Command();
 
     program
-        .name("sol-datalog-cli")
+        .name("llm-features")
         .description(pkg.description)
         .version(pkg.version, "-v, --version", "Print package version")
         .helpOption("-h, --help", "Print help message");
@@ -81,11 +89,6 @@ async function main() {
         .option(
             "--download-compilers <compilerKind...>",
             `Download specified kind of supported compilers to compiler cache. Supports multiple entries.`
-        )
-        .option("--dump", "Dump generated DL")
-        .option(
-            "--dump-analyses <analysisName...>",
-            "Run analyses only and dump the results for the specified relations"
         );
 
     program.parse(process.argv);
@@ -284,26 +287,51 @@ async function main() {
     const units = reader.read(result.data);
     const infer = new InferType(result.compilerVersion as string);
 
-    const datalog = buildDatalog(units, infer);
+    const templates = new Map<string, string>([
+        ["inhinheritsStrict", "Contract {0}.name inherits from contract {1}.name"],
+        ["hasParam", "Function {0}.name has parameter {1}.name"],
+        ["hasModifier", "Function {0}.name has modifier {1}.name"],
+        ["access.readFunction", "Function {0}.name reads variable {1}.name"],
+        ["access.writeFunction", "Function {0}.name writes variable {1}.name"],
+        ["cg.path", "Function {0}.name calls callable {1}.name via {2}"]
+    ]);
 
-    if (options.dump) {
-        console.log(datalog);
-        return;
-    }
+    const outputAnalysesNames = [
+        "inh.inheritsStrict",
+        "access.readFunction",
+        "access.writeFunction",
+        "cg.path"
+    ];
 
-    if (options.dumpAnalyses) {
-        const relations = options.dumpAnalyses.map(getRelation);
-        const res = await analyze(units, infer, "csv", relations);
-        const output = await res.allFacts();
-        res.release();
+    const outputAnalyses = outputAnalysesNames.map(getRelation);
+    outputAnalyses.push(
+        new Relation("hasParam", [
+            ["fId", FunctionDefinitionId],
+            ["vId", VariableDeclarationId]
+        ]),
+        new Relation("hasModifier", [
+            ["fId", FunctionDefinitionId],
+            ["vId", ModifierDefinitionId]
+        ])
+    );
 
-        for (const analysis of options.dumpAnalyses) {
-            const facts = output.get(analysis);
+    const res = await analyze(units, infer, "csv", outputAnalyses);
+    const output = await res.allFacts();
+    res.release();
 
-            console.log(analysis, facts ? facts.map((f) => f.toCSVRow()) : facts);
+    for (const relation of outputAnalyses) {
+        const facts = output.get(relation.name);
+
+        if (!facts) {
+            continue;
         }
-        return;
+
+        for (const fact of facts) {
+            const f = new Fact(fact, reader.context);
+            console.log(f.fmt(templates.get(relation.name) as string));
+        }
     }
+    return;
 }
 
 main()

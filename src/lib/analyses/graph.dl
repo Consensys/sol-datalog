@@ -1,0 +1,23 @@
+.type NumPath = [ head: number, tail: NumPath ]
+.functor isSubsequence(a: NumPath, b: NumPath):number stateful
+
+.comp Graph<NodeT> {
+    .decl edge(from: NodeT, to: NodeT)
+}
+
+.comp NumGraph<NodeT> : Graph<NodeT> {
+    .decl path(from: NodeT, to: NodeT, path: NumPath)
+
+    // Base case - if there is an edge 
+    path(from, to, [from, [to, nil]]) :-
+        edge(from, to).
+
+    // Calls is transitive
+    path(from, to, [from, p]) :-
+        edge(from, x),
+        path(x, to, p).
+
+    path(x, y, p1) <= path(x, y, p2) :- @isSubsequence(as(p2, NumPath), as(p1, NumPath)) = 1.
+}
+
+.comp IdGraph : NumGraph<id> { }

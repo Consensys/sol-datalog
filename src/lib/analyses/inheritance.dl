@@ -1,0 +1,55 @@
+/**
+ * Note: No need for this component to be a graph since the linearizedBaseContracts lists
+ * all ancestors.
+ */
+.comp Inheritance  {
+    /// Specifies that a childContractId inherits from baseContractId (or is the same contract)
+    .decl inherits(childContractId: ContractDefinitionId, baseContractId: ContractDefinitionId)
+    inherits(childContractId, baseContractId) :- ContractDefinition(childContractId), childContractId = baseContractId.
+    inherits(childContractId, baseContractId) :-
+        ContractDefinition(childContractId),
+        ContractDefinition(baseContractId),
+        ContractDefinition_linearizedBaseContracts(childContractId, baseContractId, _).
+
+    .decl inheritsStrict(childContractId: ContractDefinitionId, baseContractId: ContractDefinitionId)
+    inheritsStrict(childContractId, baseContractId) :- inherits(childContractId, baseContractId), childContractId != baseContractId.
+
+    /// Specifies that a child FunctionDefinition/ModifierDefinition/VariableDeclaration overrides a
+    /// base FunctionDefinition/ModifierDefinition
+    /// There are 3 cases:
+    ///     - function overriding a function
+    ///     - public state var overriding a function
+    ///     - modifier overriding a modifier
+    .decl overrides(childNode: id, baseFun: id)
+
+    /// Case 1: Function overriding a function
+    overrides(childFun, baseFun) :-
+        FunctionDefinition_scope(childFun, childContract),
+        FunctionDefinition_scope(baseFun, baseContract),
+        inheritsStrict(childContract, baseContract),
+        FunctionDefinition_signature(childFun, sig),
+        FunctionDefinition_signature(baseFun, sig).
+
+    /// Case 2: Public state var overriding a function
+    overrides(childVar, baseFun) :-
+        VariableDeclaration(childVar),
+        VariableDeclaration_stateVariable(childVar, 1),
+        VariableDeclaration_visibility(childVar, "public"),
+        parent(childContract, childVar),
+        FunctionDefinition_scope(baseFun, baseContract),
+        inheritsStrict(childContract, baseContract),
+        VariableDeclaration_signature(childVar, sig),
+        FunctionDefinition_signature(baseFun, sig).
+
+    /// Case 3: Modifier overriding a modifier
+    overrides(childMod, baseMod) :-
+        ContractDefinition(baseContract),
+        ContractDefinition(childContract),
+        inheritsStrict(childContract, baseContract),
+        ModifierDefinition(childMod),
+        ancestor(childContract, childMod),
+        ModifierDefinition(baseMod),
+        ancestor(baseContract, baseMod),
+        ModifierDefinition_name(childMod, modName),
+        ModifierDefinition_name(baseMod, modName).
+}

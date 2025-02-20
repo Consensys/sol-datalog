@@ -1,0 +1,9 @@
+.decl hasParam(funId: FunctionDefinitionId, paramId: VariableDeclarationId)
+hasParam(fId, vId) :- FunctionDefinition_parameters(fId, paramId), ParameterList_parameters(paramId, vId, _).
+
+.decl hasModifier(funId: FunctionDefinitionId, modId: ModifierDefinitionId)
+hasModifier(fId, mId) :- FunctionDefinition_modifiers(fId, modInvId,_), ModifierInvocation_vReferencedDeclaration(modInvId, mId), ModifierDefinition(mId).
+
+.decl hasBody(funId: FunctionDefinitionId, bodyId: StatementId)
+hasBody(fId, bId) :- FunctionDefinition_body(fId, bId, 1).
+hasBody(fId, bId) :- hasModifier(fId, mId), ModifierDefinition_body(mId, bId, 1).
