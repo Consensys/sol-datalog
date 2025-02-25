@@ -93,7 +93,7 @@ export class Fact {
         this.args = fact.fields.map((val, i) => liftValue(val, this.relation.fields[i][1], ctx));
     }
 
-    fmt(message: string): string {
+    fmt(message: string, files?: Map<number, Uint8Array>): string {
         for (let i = 0; i < this.args.length; i++) {
             const detail = this.args[i];
             const part = pp(detail);
@@ -109,6 +109,25 @@ export class Fact {
                     let val: any = detail;
                     for (const comp of components) {
                         if (comp.length === 0) {
+                            continue;
+                        }
+
+                        // Special case - if its .source then extract the corresponding source fragment
+                        if (comp === "source") {
+                            const unitId = Number(val["src"].split(":")[2]);
+                            assert(
+                                files !== undefined,
+                                `Need a source map to decode source format`
+                            );
+                            const source = files.get(unitId);
+                            assert(
+                                source !== undefined,
+                                `Unknown source for SourceUnit with id ${unitId}`
+                            );
+                            val = new TextDecoder("utf-8")
+                                .decode((val as ASTNode).extractSourceFragment(source))
+                                .replaceAll("\n", "\\n");
+
                             continue;
                         }
 

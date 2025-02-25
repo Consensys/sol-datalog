@@ -45,6 +45,7 @@ describe("Analyses", () => {
             let expectedOutput: AnalysesTest;
             let reader: sol.ASTReader;
             let version: string;
+            let fileMap: Map<number, Uint8Array>;
 
             before(async () => {
                 reader = new sol.ASTReader();
@@ -63,6 +64,13 @@ describe("Analyses", () => {
                 expectedOutput = fse.readJSONSync(json, {
                     encoding: "utf-8"
                 }) as AnalysesTest;
+
+                fileMap = new Map();
+
+                for (const unit of units) {
+                    const unitSource = fse.readFileSync(unit.absolutePath);
+                    fileMap.set(unit.sourceListIndex, unitSource);
+                }
             });
 
             it("Analyses expected results", async () => {
@@ -75,7 +83,7 @@ describe("Analyses", () => {
 
                 for (const [key, val] of Object.entries(expectedOutput)) {
                     const received = (facts.get(key) as dl.Fact[]).map((f) =>
-                        new Fact(f, reader.context).fmt(val.fmt)
+                        new Fact(f, reader.context).fmt(val.fmt, fileMap)
                     );
 
                     expect(received).toEqual(val.data);

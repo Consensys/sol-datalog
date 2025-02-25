@@ -2,7 +2,7 @@
 .functor isSubsequence(a: NumPath, b: NumPath):number stateful
 
 .comp Graph<NodeT> {
-    .decl edge(from: NodeT, to: NodeT)
+    .decl edge(from: NodeT, to: NodeT) overridable
 }
 
 .comp NumGraph<NodeT> : Graph<NodeT> {
