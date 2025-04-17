@@ -44,6 +44,7 @@ export const AVAILABLE_ANALYSES: dl.Relation[] = [
         ["to", IdT],
         ["path", NumPathT]
     ]),
+    new dl.Relation("cg.isRecursive", [["fun", FunctionDefinitionId]]),
     new dl.Relation("inh.inherits", [
         ["childContractId", ContractDefinitionId],
         ["baseContractId", ContractDefinitionId]

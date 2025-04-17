@@ -1,0 +1,29 @@
+{
+    "cg.path": {
+        "fmt": "{0}.vScope.name {0}.name calls {1}.name via ${2}",
+        "data": [
+            "Foo nonRec calls a via $[Foo:nonRec,Foo:a]",
+            "Foo nonRec calls b via $[Foo:nonRec,Foo:a,Foo:b]",
+            "Foo a calls b via $[Foo:a,Foo:b]",
+            "Foo simpleRec calls simpleRec via $[Foo:simpleRec,Foo:simpleRec]",
+            "Foo mutRec calls mutRec via $[Foo:mutRec,Foo:c,Foo:mutRec]",
+            "Foo mutRec calls c via $[Foo:mutRec,Foo:c]",
+            "Foo c calls mutRec via $[Foo:c,Foo:mutRec]",
+            "Foo c calls c via $[Foo:c,Foo:mutRec,Foo:c]",
+            "Foo condRec calls condRec via $[Foo:condRec,Foo:e,Foo:condRec]",
+            "Foo condRec calls e via $[Foo:condRec,Foo:e]",
+            "Foo e calls condRec via $[Foo:e,Foo:condRec]",
+            "Foo e calls e via $[Foo:e,Foo:condRec,Foo:e]"
+        ]
+    },
+    "cg.isRecursive": {
+        "fmt": "{0}.name is recursive",
+        "data": [
+            "simpleRec is recursive",
+            "mutRec is recursive",
+            "c is recursive",
+            "condRec is recursive",
+            "e is recursive"
+        ]
+    }
+}
