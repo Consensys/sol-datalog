@@ -3,3 +3,4 @@
 .init cg = CallGraph
 .init cfg = CFG
 .init dataflow = Dataflow
+.init interprocCFG = InterproceduralCFG

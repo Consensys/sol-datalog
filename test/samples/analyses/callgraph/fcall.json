@@ -17,5 +17,18 @@
             "main calls f via [Foo:main,Foo:b,Foo:d,Foo:f]",
             "rec calls rec via [Foo:rec,Foo:rec]"
         ]
+    },
+    "mayCall": {
+        "fmt": "{0}.source may call {1}.name",
+        "data": [
+            "c() may call c",
+            "d() may call d",
+            "d() may call d",
+            "f() may call f",
+            "a() may call a",
+            "this.b() may call b",
+            "Foo.a() may call a",
+            "rec() may call rec"
+        ]
     }
 }

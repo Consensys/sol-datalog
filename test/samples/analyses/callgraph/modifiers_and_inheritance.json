@@ -1,0 +1,20 @@
+{
+    "mayCall": {
+        "fmt": "{0}.source may call {1}.source",
+        "data": [
+            "constructor() M() {\\n        arr.push(1);\\n    } may call constructor() {\\n        arr.push(0);\\n    }",
+            "constructor() {\\n        arr.push(4);\\n    } may call constructor() {\\n        arr.push(0);\\n    }",
+            "constructor() M1() M2() {\\n        arr.push(7);\\n    } may call constructor() {\\n        arr.push(0);\\n    }",
+            "constructor() M1() M2() {\\n        arr.push(7);\\n    } may call constructor() M() {\\n        arr.push(1);\\n    }",
+            "constructor() M1() M2() {\\n        arr.push(7);\\n    } may call constructor() {\\n        arr.push(4);\\n    }"
+        ]
+    },
+    "modifierInvocation_refersToModifier": {
+        "fmt": "Modifier invocation {0}.source in constructor of {0}.parent.parent.name may call {1}.source",
+        "data": [
+            "Modifier invocation M() in constructor of Base2 may call modifier M() {\\n        arr.push(2);\\n        _;\\n        arr.push(3);\\n    }",
+            "Modifier invocation M1() in constructor of Foo may call modifier M1() {\\n        arr.push(5);\\n        _;\\n        arr.push(6);\\n    }",
+            "Modifier invocation M2() in constructor of Foo may call modifier M2() {\\n        arr.push(8);\\n        _;\\n        arr.push(9);\\n    }"
+        ]
+    }
+}

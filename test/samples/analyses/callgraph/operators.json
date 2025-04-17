@@ -5,5 +5,9 @@
             "Foo main calls add via $[Foo:main,add]",
             "Foo foo calls bwnot via $[Foo:foo,bwnot]"
         ]
+    },
+    "mayCall": {
+        "fmt": "{0}.source may call {1}.name",
+        "data": ["a + b may call add", "~a may call bwnot"]
     }
 }

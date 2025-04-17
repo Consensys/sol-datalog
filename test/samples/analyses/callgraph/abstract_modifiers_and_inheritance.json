@@ -1,0 +1,24 @@
+{
+    "mayCall": {
+        "fmt": "{0}.source may call {1}.source",
+        "data": [
+            "constructor() M() {\\n        arr.push(1);\\n    } may call constructor() M() {\\n        arr.push(0);\\n    }",
+            "constructor() M() {\\n        arr.push(4);\\n    } may call constructor() M() {\\n        arr.push(0);\\n    }",
+            "constructor() M() {\\n        arr.push(4);\\n    } may call constructor() M() {\\n        arr.push(1);\\n    }",
+            "constructor() {\\n        arr.push(7);\\n    } may call constructor() M() {\\n        arr.push(0);\\n    }",
+            "constructor() {\\n        arr.push(7);\\n    } may call constructor() M() {\\n        arr.push(1);\\n    }",
+            "constructor() {\\n        arr.push(7);\\n    } may call constructor() M() {\\n        arr.push(4);\\n    }"
+        ]
+    },
+    "modifierInvocation_refersToModifier": {
+        "fmt": "Modifier invocation {0}.source in constructor of {0}.parent.parent.name may call {1}.source",
+        "data": [
+            "Modifier invocation M() in constructor of Base1 may call modifier M() virtual;",
+            "Modifier invocation M() in constructor of Base1 may call modifier M() virtual override {\\n        arr.push(2);\\n        _;\\n        arr.push(3);\\n    }",
+            "Modifier invocation M() in constructor of Base1 may call modifier M() virtual override {\\n        arr.push(5);\\n        _;\\n        arr.push(6);\\n    }",
+            "Modifier invocation M() in constructor of Base2 may call modifier M() virtual override {\\n        arr.push(2);\\n        _;\\n        arr.push(3);\\n    }",
+            "Modifier invocation M() in constructor of Base2 may call modifier M() virtual override {\\n        arr.push(5);\\n        _;\\n        arr.push(6);\\n    }",
+            "Modifier invocation M() in constructor of Base3 may call modifier M() virtual override {\\n        arr.push(5);\\n        _;\\n        arr.push(6);\\n    }"
+        ]
+    }
+}

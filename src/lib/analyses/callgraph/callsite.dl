@@ -1,0 +1,41 @@
+.type CallsiteType = FunctionCallId | BinaryOperationId | UnaryOperationId | FunctionDefinitionId
+.type CallTargetType = FunctionDefinitionId
+
+/// Relation computing the set of possible targets for a call.
+.decl mayCall(callsite: CallsiteType, target: CallTargetType)
+
+/// Function call - we can call the function that is explicitly referred to
+mayCall(callsite, target) :-
+    FunctionCall_expression(callsite, callee),
+    exprRefersTo(callee, target),
+    FunctionDefinition(target).
+
+/// Function call - if the referred to function is virtual we may call any of its overriding functions
+mayCall(callsite, target) :-
+    FunctionCall_expression(callsite, callee),
+    exprRefersTo(callee, calleeBaseDef),
+    FunctionDefinition_virtual(calleeBaseDef, 1),
+    inh.overrides(target, calleeBaseDef),
+    FunctionDefinition(target).
+
+/// Implicit function call due to binary operator
+mayCall(callsite, target) :-
+    BinaryOperation_userFunction(callsite, target, 1),
+    FunctionDefinition(target).
+
+/// Implicit function call due to unary operator
+mayCall(callsite, target) :-
+    UnaryOperation_userFunction(callsite, target, 1),
+    FunctionDefinition(target).
+
+/// Base constructor calls. We assume that the base constructors are implicitly
+/// called at the start of the most derived constructor definition in
+/// linearizedBaseContracts order.  So we take the most derived constructor
+/// FunctionDefinition as the "callsite".
+/// Note that contracts may only have a single constructor, make this rule work.
+mayCall(callsite, target) :-
+    FunctionDefinition(callsite),
+    hasConstructor(contractDef, callsite),
+    ContractDefinition_linearizedBaseContracts(contractDef, baseDef, _),
+    contractDef != baseDef,
+    hasConstructor(baseDef, target).

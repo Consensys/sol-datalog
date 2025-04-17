@@ -27,18 +27,30 @@ contract(id, name) :- ContractDefinition(id), ContractDefinition_name(id, name).
 .decl method(methodId: FunctionDefinitionId, contractId: ContractDefinitionId)
 method(methodId, contractId) :- inh.inherits(contractId, baseId), functionIn(methodId, _, baseId).
 
-.decl ModifierInvocation_vReferencedDeclaration(mId: id, rId: id)
+.decl ModifierInvocation_vReferencedDeclaration(mId: ModifierInvocationId, rId: id)
 ModifierInvocation_vReferencedDeclaration(mId, rId) :-
     ModifierInvocation(mId),
     ModifierInvocation_modifierName(mId, mNameId),
     exprRefersTo(mNameId, rId).
 
-.decl modifierInvocation_isModifier(mid: id)
+.decl modifierInvocation_isModifier(mid: ModifierInvocationId)
 modifierInvocation_isModifier(mId) :-
     ModifierInvocation(mId),
     ModifierInvocation_vReferencedDeclaration(mId, rId),
     ModifierDefinition(rId).
 
+.decl modifierInvocation_refersToModifier(mid: ModifierInvocationId, def: ModifierDefinitionId)
+/// Modifier reference
+modifierInvocation_refersToModifier(mid, def) :-
+    ModifierInvocation_vReferencedDeclaration(mid, def),
+    ModifierDefinition(def).
+
+/// Modifier reference to virtial modifier - may be overloaded
+modifierInvocation_refersToModifier(mid, def) :-
+    ModifierInvocation_vReferencedDeclaration(mid, modBaseDef),
+    ModifierDefinition_virtual(modBaseDef, 1),
+    inh.overrides(def, modBaseDef),
+    ModifierDefinition(def).
 
 // Specifies that exprId is an Identifier, IdentifierPath or MemberAccess that refers to defId
 .decl exprRefersTo(exprId: id, defId: id)
@@ -53,3 +65,9 @@ exprRefersTo(exprId, defId) :-
 exprRefersTo(exprId, defId) :-
     MemberAccess(exprId),
     MemberAccess_referencedDeclaration(exprId, defId).
+
+.decl hasConstructor(contract: ContractDefinitionId, constr: FunctionDefinitionId)
+hasConstructor(contract, constr) :-
+    FunctionDefinition_scope(constr, contract),
+    ContractDefinition(contract),
+    FunctionDefinition_isConstructor(constr, 1).

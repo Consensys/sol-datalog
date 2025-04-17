@@ -24,6 +24,7 @@ contract Foo {
 	function main() public {
 		a();
 		this.b();
+		Foo.a();
 	}
 
     function rec() public {

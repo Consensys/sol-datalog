@@ -1,0 +1,12 @@
+.comp CallGraph : IdGraph {
+    // Call due to an expression inside the function
+    edge(caller, callee) :- 
+        FunctionDefinition(caller),
+        ancestor(caller, exprId),
+        mayCall(exprId, callee).
+
+    // Implicit call to base constructor
+    edge(caller, callee) :- 
+        FunctionDefinition_isConstructor(caller, 1),
+        mayCall(caller, callee).
+}

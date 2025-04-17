@@ -13,6 +13,10 @@ using { bwnot as ~ } for MyUint global;
 
 contract Foo {
 
+  function nonUserDefined(uint x, uint y) internal returns (uint) {
+    return x+~y;
+  }
+
   function main(MyUint a, MyUint b) internal returns (MyUint) {
     return a + b;
   }

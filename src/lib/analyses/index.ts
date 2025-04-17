@@ -5,6 +5,7 @@ import {
     FunctionCallId,
     FunctionDefinitionId,
     ModifierDefinitionId,
+    ModifierInvocationId,
     VariableDeclarationId
 } from "../../gen/ast_relations";
 
@@ -114,6 +115,14 @@ export const AVAILABLE_ANALYSES: dl.Relation[] = [
         ["expr", ExpressionId],
         ["varId", VariableDeclarationId],
         ["shape", ShapeT]
+    ]),
+    new dl.Relation("mayCall", [
+        ["callsite", IdT],
+        ["target", IdT]
+    ]),
+    new dl.Relation("modifierInvocation_refersToModifier", [
+        ["mid", ModifierInvocationId],
+        ["def", ModifierDefinitionId]
     ])
 ];
 

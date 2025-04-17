@@ -1,0 +1,10 @@
+{
+    "mayCall": {
+        "fmt": "{0}.source may call {1}.source",
+        "data": [
+            "constructor() Base1(0) Base3(3) {\\n\\n    } may call constructor(uint x) {}",
+            "constructor() Base1(0) Base3(3) {\\n\\n    } may call constructor(uint z) {}",
+            "constructor() Base1(0) Base3(3) {\\n\\n    } may call constructor(uint w) {}"
+        ]
+    }
+}
