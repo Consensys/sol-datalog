@@ -1,0 +1,15 @@
+{
+    "inh.findBaseConstructorArg": {
+        "fmt": "{2}-th constructor arg of {1}.name in mdc {0}.name is {3}.source",
+        "data": [
+            "0-th constructor arg of Base1 in mdc Base2 is a2+1",
+            "1-th constructor arg of Base1 in mdc Base2 is b2+2",
+            "0-th constructor arg of Base1 in mdc Child is a2+1",
+            "1-th constructor arg of Base1 in mdc Child is b2+2",
+            "0-th constructor arg of Base2 in mdc Child is 7",
+            "1-th constructor arg of Base2 in mdc Child is 8",
+            "0-th constructor arg of Base3 in mdc Child is 5",
+            "1-th constructor arg of Base3 in mdc Child is 6"
+        ]
+    }
+}

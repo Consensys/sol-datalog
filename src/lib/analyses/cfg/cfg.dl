@@ -19,9 +19,9 @@
         ((UnaryOperation_operator(id, "++"); UnaryOperation_operator(id, "--")), !exprIsUnderExprStmt(id)).
 
     // A filtered dominate relation useful for testing
-    .decl dominate(prev: id, next: id, path: NumPath)
+    .decl dominate(prev: id, next: id, path: dom.Path)
     dominate(prev, next, path) :-
-        dom.path(prev, next, path),
+        dom.path(prev, next, _, path),
         isInterestingForDominate(prev),
         isInterestingForDominate(next).
 }

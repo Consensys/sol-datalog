@@ -1,24 +1,27 @@
-.type NumPath = [ head: number, tail: NumPath ]
-.functor isSubsequence(a: NumPath, b: NumPath):number stateful
-
 .comp Graph<NodeT> {
-    .decl edge(from: NodeT, to: NodeT) overridable
-}
+    .type Path = [ head: NodeT, tail: Path ]
 
-.comp NumGraph<NodeT> : Graph<NodeT> {
-    .decl path(from: NodeT, to: NodeT, path: NumPath)
+    .decl edge(from: NodeT, to: NodeT) overridable
+    .decl path(from: NodeT, to: NodeT, len: number, path: Path)
 
     // Base case - if there is an edge 
-    path(from, to, [from, [to, nil]]) :-
+    path(from, to, 1, [from, [to, nil]]) :-
         edge(from, to).
 
-    // Calls is transitive
-    path(from, to, [from, p]) :-
+    path(from, to, len + 1, [from, p]) :-
         edge(from, x),
-        path(x, to, p).
+        path(x, to, len, p).
 
-    // Pick any path
-    path(x, y, p1) <= path(x, y, p2) :- true.
+    // Pick shortest path 
+    path(x, y, l1, _) <= path(x, y, l2, _) :- l1 > l2.
+
+    .decl pathAt(from: NodeT, to: NodeT, idx: number, node: NodeT)
+    pathAt(from, to, 0, from) :- path(from, to, _, _).
+    pathAt(from, to, len, to) :- path(from, to, len, _).
+    pathAt(from, to, i + 1, nd) :-
+        path(from, to, _, [from, [x, _]]),
+        x != to,
+        pathAt(x, to, i, nd).
 }
 
-.comp IdGraph : NumGraph<id> { }
+.comp IdGraph : Graph<id> { }

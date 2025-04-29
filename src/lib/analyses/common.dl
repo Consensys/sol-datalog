@@ -27,6 +27,11 @@ contract(id, name) :- ContractDefinition(id), ContractDefinition_name(id, name).
 .decl method(methodId: FunctionDefinitionId, contractId: ContractDefinitionId)
 method(methodId, contractId) :- inh.inherits(contractId, baseId), functionIn(methodId, _, baseId).
 
+.decl isPublicStateVar(def: id)
+isPublicStateVar(def) :-
+    VariableDeclaration_stateVariable(def, 1),
+    VariableDeclaration_visibility(def, "public").
+
 .decl ModifierInvocation_vReferencedDeclaration(mId: ModifierInvocationId, rId: id)
 ModifierInvocation_vReferencedDeclaration(mId, rId) :-
     ModifierInvocation(mId),
@@ -39,6 +44,15 @@ modifierInvocation_isModifier(mId) :-
     ModifierInvocation_vReferencedDeclaration(mId, rId),
     ModifierDefinition(rId).
 
+.decl InheritanceSpecifier_referesTo(inhSpecId: InheritanceSpecifierId, contr: ContractDefinitionId) 
+InheritanceSpecifier_referesTo(inhSpecId, contr) :-
+    InheritanceSpecifier_baseType(inhSpecId, baseTypeId),
+    (
+        UserDefinedTypeName_referencedDeclaration(baseTypeId, contr);
+        IdentifierPath_referencedDeclaration(baseTypeId, contr)
+    ),
+    ContractDefinition(contr).
+
 .decl modifierInvocation_refersToModifier(mid: ModifierInvocationId, def: ModifierDefinitionId)
 /// Modifier reference
 modifierInvocation_refersToModifier(mid, def) :-
@@ -49,7 +63,7 @@ modifierInvocation_refersToModifier(mid, def) :-
 modifierInvocation_refersToModifier(mid, def) :-
     ModifierInvocation_vReferencedDeclaration(mid, modBaseDef),
     ModifierDefinition_virtual(modBaseDef, 1),
-    inh.overrides(def, modBaseDef),
+    inh.overrides(def, modBaseDef, _),
     ModifierDefinition(def).
 
 // Specifies that exprId is an Identifier, IdentifierPath or MemberAccess that refers to defId

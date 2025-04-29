@@ -1,0 +1,3 @@
+.comp InterproceduralCFG {
+    .init succ = InterproceduralSuccessor
+}

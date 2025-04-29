@@ -1,8 +1,10 @@
 .type CallsiteType = FunctionCallId | BinaryOperationId | UnaryOperationId | FunctionDefinitionId
-.type CallTargetType = FunctionDefinitionId
+// TODO: Make CalleeType include VariableDeclarationId and ContractDefinitionId
+// Add rules for implicit constructors and public vars
+.type CalleeType = FunctionDefinitionId 
 
 /// Relation computing the set of possible targets for a call.
-.decl mayCall(callsite: CallsiteType, target: CallTargetType)
+.decl mayCall(callsite: CallsiteType, target: CalleeType)
 
 /// Function call - we can call the function that is explicitly referred to
 mayCall(callsite, target) :-
@@ -15,7 +17,7 @@ mayCall(callsite, target) :-
     FunctionCall_expression(callsite, callee),
     exprRefersTo(callee, calleeBaseDef),
     FunctionDefinition_virtual(calleeBaseDef, 1),
-    inh.overrides(target, calleeBaseDef),
+    inh.overrides(target, calleeBaseDef, _),
     FunctionDefinition(target).
 
 /// Implicit function call due to binary operator
@@ -39,3 +41,10 @@ mayCall(callsite, target) :-
     ContractDefinition_linearizedBaseContracts(contractDef, baseDef, _),
     contractDef != baseDef,
     hasConstructor(baseDef, target).
+
+/// Relation computing the set of possible targets for a call in the context of a specific contract.
+.decl mayCallIn(callsite: CallsiteType, target: CalleeType, inContract: ContractDefinitionId)
+mayCallIn(callsite, target, inContract) :-
+    mayCall(callsite, def),
+    inh.resolvesTo(def, target, inContract),
+    FunctionDefinition(target).

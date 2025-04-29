@@ -1,0 +1,63 @@
+{
+    "inh.inherits": {
+        "fmt": "{0}.name inherits from {1}.name",
+        "data": [
+            "Base inherits from Base",
+            "Base1 inherits from Base",
+            "Base1 inherits from Base1",
+            "Base2 inherits from Base",
+            "Base2 inherits from Base2",
+            "Child inherits from Base",
+            "Child inherits from Base1",
+            "Child inherits from Base2",
+            "Child inherits from Child"
+        ]
+    },
+    "inh.inheritsStrict": {
+        "fmt": "{0}.name inherits strictly from {1}.name",
+        "data": [
+            "Base1 inherits strictly from Base",
+            "Base2 inherits strictly from Base",
+            "Child inherits strictly from Base",
+            "Child inherits strictly from Base1",
+            "Child inherits strictly from Base2"
+        ]
+    },
+    "inh.overrides": {
+        "fmt": "{0}.name overrides {1}.name",
+        "data": ["foo overrides foo", "boo overrides boo", "Foo overrides Foo"]
+    },
+    "inh.resolvesTo": {
+        "fmt": "{0}.source resolves to {1}.source in contract {2}.name",
+        "data": [
+            "function foo() external virtual returns(uint); resolves to function foo() external virtual returns(uint); in contract Base",
+            "function foo() external virtual returns(uint); resolves to function foo() external virtual returns(uint); in contract Base1",
+            "function foo() external virtual returns(uint); resolves to function foo() external virtual returns(uint); in contract Base2",
+            "function foo() external virtual returns(uint); resolves to uint public override foo in contract Child",
+            "uint public bar resolves to uint public bar in contract Base",
+            "uint public bar resolves to uint public bar in contract Base1",
+            "uint public bar resolves to uint public bar in contract Base2",
+            "uint public bar resolves to uint public bar in contract Child",
+            "modifier Noop() { _; } resolves to modifier Noop() { _; } in contract Base",
+            "modifier Noop() { _; } resolves to modifier Noop() { _; } in contract Base1",
+            "modifier Noop() { _; } resolves to modifier Noop() { _; } in contract Base2",
+            "modifier Noop() { _; } resolves to modifier Noop() { _; } in contract Child",
+            "function boo() Noop() internal virtual returns(uint) {} resolves to function boo() Noop() internal virtual returns(uint) {} in contract Base",
+            "function boo() Noop() internal virtual returns(uint) {} resolves to function boo() Noop() internal virtual returns(uint) {} in contract Base1",
+            "function boo() Noop() internal virtual returns(uint) {} resolves to function boo() Noop() internal virtual returns(uint) {} in contract Base2",
+            "function boo() Noop() internal virtual returns(uint) {} resolves to function boo() internal virtual override returns(uint) {\\n  } in contract Child",
+            "modifier Foo() virtual; resolves to modifier Foo() virtual; in contract Base",
+            "modifier Foo() virtual; resolves to modifier Foo() virtual; in contract Base1",
+            "modifier Foo() virtual; resolves to modifier Foo() virtual; in contract Base2",
+            "modifier Foo() virtual; resolves to modifier Foo() override { _; } in contract Child",
+            "function goo() public returns (uint) {} resolves to function goo() public returns (uint) {} in contract Base",
+            "function goo() public returns (uint) {} resolves to function goo() public returns (uint) {} in contract Base1",
+            "function goo() public returns (uint) {} resolves to function goo() public returns (uint) {} in contract Base2",
+            "function goo() public returns (uint) {} resolves to function goo() public returns (uint) {} in contract Child",
+            "uint public override foo resolves to uint public override foo in contract Child",
+            "function boo() internal virtual override returns(uint) {\\n  } resolves to function boo() internal virtual override returns(uint) {\\n  } in contract Child",
+            "modifier Foo() override { _; } resolves to modifier Foo() override { _; } in contract Child",
+            "function goo(uint a) public returns (uint) {} resolves to function goo(uint a) public returns (uint) {} in contract Child"
+        ]
+    }
+}

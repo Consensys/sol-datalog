@@ -5,7 +5,6 @@ import {
     FunctionCallId,
     FunctionDefinitionId,
     ModifierDefinitionId,
-    ModifierInvocationId,
     VariableDeclarationId
 } from "../../gen/ast_relations";
 
@@ -34,6 +33,39 @@ ShapeT.branches[2][1][0][1] = ShapeT;
 
 NumPathT.fields.push(["tail", NumPathT]);
 
+export const CallListNodeT = new dl.ADTT("CallListNode", [
+    ["Node", [["id", IdT]]],
+    [
+        "Call",
+        [
+            ["id", IdT],
+            ["target", IdT]
+        ]
+    ],
+    [
+        "Modifier",
+        [
+            ["id", IdT],
+            ["idx", dl.NumberT]
+        ]
+    ],
+    [
+        "BaseConstructor",
+        [
+            ["mdc", IdT],
+            ["baseIdx", dl.NumberT]
+        ]
+    ]
+]);
+
+export const CallListT = new dl.RecordT("CallList", [["head", CallListNodeT]]);
+CallListT.fields.push(["tail", CallListT]);
+
+export const ContextT = new dl.RecordT("Context", [
+    ["mdc", ContractDefinitionId],
+    ["callList", CallListT]
+]);
+
 export const AVAILABLE_ANALYSES: dl.Relation[] = [
     new dl.Relation("cg.edge", [
         ["from", IdT],
@@ -42,6 +74,7 @@ export const AVAILABLE_ANALYSES: dl.Relation[] = [
     new dl.Relation("cg.path", [
         ["from", IdT],
         ["to", IdT],
+        ["len", dl.NumberT],
         ["path", NumPathT]
     ]),
     new dl.Relation("cg.isRecursive", [["fun", FunctionDefinitionId]]),
@@ -55,11 +88,24 @@ export const AVAILABLE_ANALYSES: dl.Relation[] = [
     ]),
     new dl.Relation("inh.overrides", [
         ["childNode", IdT],
-        ["baseFun", IdT]
+        ["baseFun", IdT],
+        ["inContract", ContractDefinitionId]
+    ]),
+    new dl.Relation("inh.findBaseConstructorArg", [
+        ["mdc", ContractDefinitionId],
+        ["base", ContractDefinitionId],
+        ["argIdx", dl.NumberT],
+        ["val", ExpressionId]
+    ]),
+    new dl.Relation("inh.resolvesTo", [
+        ["def", IdT],
+        ["resolved", IdT],
+        ["inContract", ContractDefinitionId]
     ]),
     new dl.Relation("cfg.dom.path", [
         ["pred", IdT],
         ["succ", IdT],
+        ["len", dl.NumberT],
         ["path", NumPathT]
     ]),
     new dl.Relation("cfg.dominate", [
@@ -73,7 +119,9 @@ export const AVAILABLE_ANALYSES: dl.Relation[] = [
     ]),
     new dl.Relation("cfg.succ.path", [
         ["prev", IdT],
-        ["next", IdT]
+        ["next", IdT],
+        ["len", dl.NumberT],
+        ["path", NumPathT]
     ]),
     new dl.Relation("cfg.succ.succ_first", [
         ["prev", IdT],
@@ -121,9 +169,9 @@ export const AVAILABLE_ANALYSES: dl.Relation[] = [
         ["callsite", IdT],
         ["target", IdT]
     ]),
-    new dl.Relation("modifierInvocation_refersToModifier", [
-        ["mid", ModifierInvocationId],
-        ["def", ModifierDefinitionId]
+    new dl.Relation("interprocCFG.succ.edge", [
+        ["from", ContextT],
+        ["to", ContextT]
     ])
 ];
 

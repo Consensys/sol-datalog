@@ -35,16 +35,28 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.ContractDefinition) {
         fs.addFacts(new Fact(rln.ContractDefinition, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(
+            new Fact(rln.ContractDefinition_linearizedBaseContracts_length, [
+                nd.id,
+                nd.linearizedBaseContracts.length
+            ])
+        );
         for (let i = 0; i < nd.linearizedBaseContracts.length; i++) {
             const t = nd.linearizedBaseContracts[i];
             fs.addFacts(new Fact(rln.ContractDefinition_linearizedBaseContracts, [nd.id, t, i]));
         }
 
+        fs.addFacts(
+            new Fact(rln.ContractDefinition_usedErrors_length, [nd.id, nd.usedErrors.length])
+        );
         for (let i = 0; i < nd.usedErrors.length; i++) {
             const t = nd.usedErrors[i];
             fs.addFacts(new Fact(rln.ContractDefinition_usedErrors, [nd.id, t, i]));
         }
 
+        fs.addFacts(
+            new Fact(rln.ContractDefinition_usedEvents_length, [nd.id, nd.usedEvents.length])
+        );
         for (let i = 0; i < nd.usedEvents.length; i++) {
             const t = nd.usedEvents[i];
             fs.addFacts(new Fact(rln.ContractDefinition_usedEvents, [nd.id, t, i]));
@@ -127,6 +139,9 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.FunctionDefinition) {
         fs.addFacts(new Fact(rln.FunctionDefinition, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(
+            new Fact(rln.FunctionDefinition_modifiers_length, [nd.id, nd.vModifiers.length])
+        );
         for (let i = 0; i < nd.vModifiers.length; i++) {
             const t = nd.vModifiers[i];
             fs.addFacts(new Fact(rln.FunctionDefinition_modifiers, [nd.id, t.id, i]));
@@ -254,11 +269,15 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.FunctionCall) {
         fs.addFacts(new Fact(rln.FunctionCall, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(new Fact(rln.FunctionCall_arguments_length, [nd.id, nd.vArguments.length]));
         for (let i = 0; i < nd.vArguments.length; i++) {
             const t = nd.vArguments[i];
             fs.addFacts(new Fact(rln.FunctionCall_arguments, [nd.id, t.id, i]));
         }
         if (nd.fieldNames !== undefined) {
+            fs.addFacts(
+                new Fact(rln.FunctionCall_fieldNames_length, [nd.id, nd.fieldNames.length])
+            );
             for (let i = 0; i < nd.fieldNames.length; i++) {
                 const t = nd.fieldNames[i];
                 fs.addFacts(new Fact(rln.FunctionCall_fieldNames, [nd.id, t, i]));
@@ -452,6 +471,7 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.TupleExpression) {
         fs.addFacts(new Fact(rln.TupleExpression, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(new Fact(rln.TupleExpression_components_length, [nd.id, nd.components.length]));
         for (let realI = 0, i = 0; realI < nd.components.length; realI++) {
             const t = nd.components[realI];
 
@@ -530,6 +550,7 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.StructDefinition) {
         fs.addFacts(new Fact(rln.StructDefinition, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(new Fact(rln.StructDefinition_members_length, [nd.id, nd.vMembers.length]));
         for (let i = 0; i < nd.vMembers.length; i++) {
             const t = nd.vMembers[i];
             fs.addFacts(new Fact(rln.StructDefinition_members, [nd.id, t.id, i]));
@@ -547,6 +568,7 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.EnumDefinition) {
         fs.addFacts(new Fact(rln.EnumDefinition, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(new Fact(rln.EnumDefinition_members_length, [nd.id, nd.vMembers.length]));
         for (let i = 0; i < nd.vMembers.length; i++) {
             const t = nd.vMembers[i];
             fs.addFacts(new Fact(rln.EnumDefinition_members, [nd.id, t.id, i]));
@@ -718,6 +740,7 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.TryStatement) {
         fs.addFacts(new Fact(rln.TryStatement, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(new Fact(rln.TryStatement_clauses_length, [nd.id, nd.vClauses.length]));
         for (let i = 0; i < nd.vClauses.length; i++) {
             const t = nd.vClauses[i];
             fs.addFacts(new Fact(rln.TryStatement_clauses, [nd.id, t.id, i]));
@@ -737,6 +760,7 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.Block) {
         fs.addFacts(new Fact(rln.Block, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(new Fact(rln.Block_statements_length, [nd.id, nd.vStatements.length]));
         for (let i = 0; i < nd.vStatements.length; i++) {
             const t = nd.vStatements[i];
             fs.addFacts(new Fact(rln.Block_statements, [nd.id, t.id, i]));
@@ -747,6 +771,7 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.UncheckedBlock) {
         fs.addFacts(new Fact(rln.UncheckedBlock, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(new Fact(rln.UncheckedBlock_statements_length, [nd.id, nd.vStatements.length]));
         for (let i = 0; i < nd.vStatements.length; i++) {
             const t = nd.vStatements[i];
             fs.addFacts(new Fact(rln.UncheckedBlock_statements, [nd.id, t.id, i]));
@@ -776,6 +801,12 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
             new Fact(rln.src, [nd.id, nd.src])
         );
 
+        fs.addFacts(
+            new Fact(rln.VariableDeclarationStatement_assignments_length, [
+                nd.id,
+                nd.assignments.length
+            ])
+        );
         for (let realI = 0, i = 0; realI < nd.assignments.length; realI++) {
             const t = nd.assignments[realI];
 
@@ -789,6 +820,12 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
             i++;
         }
 
+        fs.addFacts(
+            new Fact(rln.VariableDeclarationStatement_declarations_length, [
+                nd.id,
+                nd.vDeclarations.length
+            ])
+        );
         for (let i = 0; i < nd.vDeclarations.length; i++) {
             const t = nd.vDeclarations[i];
             fs.addFacts(new Fact(rln.VariableDeclarationStatement_declarations, [nd.id, t.id, i]));
@@ -841,6 +878,7 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.ParameterList) {
         fs.addFacts(new Fact(rln.ParameterList, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(new Fact(rln.ParameterList_parameters_length, [nd.id, nd.vParameters.length]));
         for (let i = 0; i < nd.vParameters.length; i++) {
             const t = nd.vParameters[i];
             fs.addFacts(new Fact(rln.ParameterList_parameters, [nd.id, t.id, i]));
@@ -851,6 +889,9 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
             new Fact(rln.src, [nd.id, nd.src])
         );
 
+        fs.addFacts(
+            new Fact(rln.InheritanceSpecifier_arguments_length, [nd.id, nd.vArguments.length])
+        );
         for (let i = 0; i < nd.vArguments.length; i++) {
             const t = nd.vArguments[i];
             fs.addFacts(new Fact(rln.InheritanceSpecifier_arguments, [nd.id, t.id, i]));
@@ -861,6 +902,12 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.UsingForDirective) {
         fs.addFacts(new Fact(rln.UsingForDirective, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
         if (nd.vFunctionList !== undefined) {
+            fs.addFacts(
+                new Fact(rln.UsingForDirective_functionList_length, [
+                    nd.id,
+                    nd.vFunctionList.length
+                ])
+            );
             for (let i = 0; i < nd.vFunctionList.length; i++) {
                 const t = nd.vFunctionList[i];
                 fs.addFacts(
@@ -902,6 +949,7 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.PragmaDirective) {
         fs.addFacts(new Fact(rln.PragmaDirective, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(new Fact(rln.PragmaDirective_literals_length, [nd.id, nd.literals.length]));
         for (let i = 0; i < nd.literals.length; i++) {
             const t = nd.literals[i];
             fs.addFacts(new Fact(rln.PragmaDirective_literals, [nd.id, t, i]));
@@ -909,6 +957,9 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.ModifierInvocation) {
         fs.addFacts(new Fact(rln.ModifierInvocation, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(
+            new Fact(rln.ModifierInvocation_arguments_length, [nd.id, nd.vArguments.length])
+        );
         for (let i = 0; i < nd.vArguments.length; i++) {
             const t = nd.vArguments[i];
             fs.addFacts(new Fact(rln.ModifierInvocation_arguments, [nd.id, t.id, i]));
@@ -945,6 +996,9 @@ export function accumulateNodeFacts(nd: sol.ASTNode, infer: sol.InferType, fs: F
     } else if (nd instanceof sol.OverrideSpecifier) {
         fs.addFacts(new Fact(rln.OverrideSpecifier, [nd.id]), new Fact(rln.src, [nd.id, nd.src]));
 
+        fs.addFacts(
+            new Fact(rln.OverrideSpecifier_overrides_length, [nd.id, nd.vOverrides.length])
+        );
         for (let i = 0; i < nd.vOverrides.length; i++) {
             const t = nd.vOverrides[i];
             fs.addFacts(new Fact(rln.OverrideSpecifier_overrides, [nd.id, t.id, i]));

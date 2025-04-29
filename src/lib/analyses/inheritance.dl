@@ -20,10 +20,10 @@
     ///     - function overriding a function
     ///     - public state var overriding a function
     ///     - modifier overriding a modifier
-    .decl overrides(childNode: id, baseFun: id)
+    .decl overrides(childNode: id, baseFun: id, inContract: ContractDefinitionId)
 
     /// Case 1: Function overriding a function
-    overrides(childFun, baseFun) :-
+    overrides(childFun, baseFun, childContract) :-
         FunctionDefinition_scope(childFun, childContract),
         FunctionDefinition_scope(baseFun, baseContract),
         inheritsStrict(childContract, baseContract),
@@ -31,7 +31,7 @@
         FunctionDefinition_signature(baseFun, sig).
 
     /// Case 2: Public state var overriding a function
-    overrides(childVar, baseFun) :-
+    overrides(childVar, baseFun, childContract) :-
         VariableDeclaration(childVar),
         VariableDeclaration_stateVariable(childVar, 1),
         VariableDeclaration_visibility(childVar, "public"),
@@ -42,14 +42,62 @@
         FunctionDefinition_signature(baseFun, sig).
 
     /// Case 3: Modifier overriding a modifier
-    overrides(childMod, baseMod) :-
+    overrides(childMod, baseMod, childContract) :-
         ContractDefinition(baseContract),
         ContractDefinition(childContract),
         inheritsStrict(childContract, baseContract),
         ModifierDefinition(childMod),
-        ancestor(childContract, childMod),
+        parent(childContract, childMod),
         ModifierDefinition(baseMod),
-        ancestor(baseContract, baseMod),
+        parent(baseContract, baseMod),
         ModifierDefinition_name(childMod, modName),
         ModifierDefinition_name(baseMod, modName).
+
+    // Given an argument index `argIdx` of the constructor of a base contract `base` in a contract `mdc`, find the exact
+    // expression `val` thay corresponds to the value passed to that arg. Note that this may appear in an intermediate
+    // base class, either in a `ModifierInvocation` or an `InhertianceSpecifier`.
+    // Note that its a compiler error to specify a base's arguments more than once (even with diamond inheritance).
+    // So we don't have to worry about order here.
+    .decl findBaseConstructorArg(mdc: ContractDefinitionId, base: ContractDefinitionId, argIdx: number, val: ExpressionId)
+
+    // Case 1: ModifierInvocation in some base (either mdc or an intermediate base)
+    findBaseConstructorArg(mdc, base, argIdx, val) :-
+        ContractDefinition_linearizedBaseContracts(mdc, someBase, _),
+        FunctionDefinition_scope(constr, someBase),
+        FunctionDefinition_isConstructor(constr, 1),
+        FunctionDefinition_modifiers(constr, mod, _),
+        ModifierInvocation_vReferencedDeclaration(mod, base),
+        ContractDefinition(base),
+        ModifierInvocation_arguments(mod, val, argIdx).
+
+    // Case 2: InhertianceSpecifier in some base (either mdc or an intermediate base)
+    findBaseConstructorArg(mdc, base, argIdx, val) :-
+        ContractDefinition_linearizedBaseContracts(mdc, someBase, _),
+        parent(someBase, inhSpec),
+        InheritanceSpecifier_referesTo(inhSpec, base),
+        InheritanceSpecifier_arguments(inhSpec, val, argIdx),
+        ContractDefinition(base).
+
+    .decl resolvesToHelper(def: id, resolved: id, inContract: ContractDefinitionId, idx: number)
+    resolvesToHelper(def, def, inContract, i) :-
+        ContractDefinition_linearizedBaseContracts(inContract, someBase, i),
+        (FunctionDefinition(def) ; ModifierDefinition(def) ; isPublicStateVar(def)),
+        parent(someBase, def).
+
+    resolvesToHelper(def, resolved, inContract, i) :-
+        ContractDefinition_linearizedBaseContracts(inContract, someBase, i),
+        (FunctionDefinition(resolved) ; ModifierDefinition(resolved) ; isPublicStateVar(resolved)),
+        overrides(resolved, def, someBase).
+        
+    resolvesToHelper(def, resolved, inContract, i) :-
+        ContractDefinition_linearizedBaseContracts(inContract, someBase, i),
+        resolvesToHelper(def, resolved, inContract, i + 1),
+        !overrides(_, def, someBase).
+
+    // Relation determining to what exact FunctionDefinition/ModifierDefinition
+    // `resolved`, a given base FunctionDefintion/ModifierDefinitionId `def`
+    // resolves to inside the most-derived contract `inContract`.
+    .decl resolvesTo(def: id, resolved: id, inContract: ContractDefinitionId)
+    resolvesTo(def, resolved, inContract) :-
+        resolvesToHelper(def, resolved, inContract, 0).
 }

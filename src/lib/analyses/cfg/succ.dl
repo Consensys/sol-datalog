@@ -626,5 +626,5 @@
         EmitStatement_eventCall(next, prev).
 
     .decl succ(prev: id, next: id)
-    succ(prev, next) :- path(prev, next, _).
+    succ(prev, next) :- path(prev, next, _, _).
 }

@@ -61,9 +61,13 @@ export function compileDatalog(): void {
     const dl = buildDatalog();
     fse.writeFileSync(inputFile, dl);
 
-    const result = spawnSync("souffle", [inputFile, "--wno=all", "-o", COMPILED_BINARY], {
-        encoding: "utf-8"
-    });
+    const result = spawnSync(
+        "souffle",
+        [`-L${GEN_DIR}`, "-lfunctors", inputFile, "--wno=all", "-o", COMPILED_BINARY],
+        {
+            encoding: "utf-8"
+        }
+    );
 
     if (result.status !== 0) {
         throw new Error(

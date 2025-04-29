@@ -14,5 +14,5 @@
     .decl isRecursive(f: FunctionDefinitionId)
     isRecursive(f) :-
         FunctionDefinition(f),
-        path(f, f, _).
+        path(f, f, _, _).
 }

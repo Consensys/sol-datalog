@@ -112,26 +112,46 @@ const staticDlPreamble = `
 .decl PrimaryExpression(id: id)
 .decl TypeName(id: id)
 .decl ContractDefinition_linearizedBaseContracts(parentId: ContractDefinitionId, childId: ContractDefinitionId, idx: number)
+.decl ContractDefinition_linearizedBaseContracts_length(parentId: ContractDefinitionId, len: number)
 .decl ContractDefinition_usedErrors(parentId: ContractDefinitionId, childId: ErrorDefinitionId, idx: number)
+.decl ContractDefinition_usedErrors_length(parentId: ContractDefinitionId, len: number)
 .decl ContractDefinition_usedEvents(parentId: ContractDefinitionId, childId: EventDefinitionId, idx: number)
+.decl ContractDefinition_usedEvents_length(parentId: ContractDefinitionId, len: number)
 .decl TupleExpression_components(parentId: TupleExpressionId, childId: ExpressionId, idx: number, realIdx: number)
+.decl TupleExpression_components_length(parentId: TupleExpressionId, len: number)
 .decl FunctionDefinition_modifiers(parentId: FunctionDefinitionId, childId: ModifierInvocationId, idx: number)
+.decl FunctionDefinition_modifiers_length(parentId: FunctionDefinitionId, len: number)
 .decl FunctionCall_arguments(parentId: FunctionCallId, childId: ExpressionId, idx: number)
+.decl FunctionCall_arguments_length(parentId: FunctionCallId, len: number)
 .decl TryStatement_clauses(parentId: TryStatementId, childId: TryCatchClauseId, idx: number)
+.decl TryStatement_clauses_length(parentId: TryStatementId, len: number)
 .decl VariableDeclarationStatement_declarations(parentId: VariableDeclarationStatementId, childId: VariableDeclarationId, idx: number)
+.decl VariableDeclarationStatement_declarations_length(parentId: VariableDeclarationStatementId, len: number)
 .decl InheritanceSpecifier_arguments(parentId: InheritanceSpecifierId, childId: ExpressionId, idx: number)
+.decl InheritanceSpecifier_arguments_length(parentId: InheritanceSpecifierId, len: number)
 .decl ModifierInvocation_arguments(parentId: ModifierInvocationId, childId: ExpressionId, idx: number)
+.decl ModifierInvocation_arguments_length(parentId: ModifierInvocationId, len: number)
 .decl ParameterList_parameters(parentId: ParameterListId, childId: VariableDeclarationId, idx: number)
+.decl ParameterList_parameters_length(parentId: ParameterListId, len: number)
 .decl Block_statements(parentId: BlockId, childId: StatementId, idx: number)
+.decl Block_statements_length(parentId: BlockId, len: number)
 .decl UncheckedBlock_statements(parentId: UncheckedBlockId, childId: StatementId, idx: number)
+.decl UncheckedBlock_statements_length(parentId: UncheckedBlockId, len: number)
 .decl UsingForDirective_functionList(parentId: UsingForDirectiveId, childId: IdentifierPathId, operator: symbol, idx: number)
+.decl UsingForDirective_functionList_length(parentId: UsingForDirectiveId, len: number)
 .decl StructDefinition_members(parentId: StructDefinitionId, childId: VariableDeclarationId, idx: number)
+.decl StructDefinition_members_length(parentId: StructDefinitionId, len: number)
 .decl EnumDefinition_members(parentId: EnumDefinitionId, childId: EnumValueId, idx: number)
+.decl EnumDefinition_members_length(parentId: EnumDefinitionId, len: number)
 .decl VariableDeclarationStatement_assignments(parentId: VariableDeclarationStatementId, childId: VariableDeclarationId, idx: number, realIdx: number)
+.decl VariableDeclarationStatement_assignments_length(parentId: VariableDeclarationStatementId, len: number)
 .decl OverrideSpecifier_overrides(parentId: OverrideSpecifierId, childId: id, idx: number)
+.decl OverrideSpecifier_overrides_length(parentId: OverrideSpecifierId, len: number)
 
 .decl FunctionCall_fieldNames(parentId: FunctionCallId, name: symbol, idx: number)
+.decl FunctionCall_fieldNames_length(parentId: FunctionCallId, len: number)
 .decl PragmaDirective_literals(parentId: FunctionCallId, literal: symbol, idx: number)
+.decl PragmaDirective_literals_length(parentId: FunctionCallId, len: number)
 .decl SourceUnit_exportedSymbols(parentId: SourceUnitId, name: symbol, id: id)
 .decl FunctionCallOptions_options(parentId: FunctionCallOptionsId, name: symbol, id: id)
 .decl FunctionDefinition_signature(funId: FunctionDefinitionId, signature: symbol)
@@ -179,26 +199,46 @@ const staticTSSuffix = `
     export const PrimaryExpression = new Relation("PrimaryExpression", [["id", id]]);
     export const TypeName = new Relation("TypeName", [["id", id]]);
     export const ContractDefinition_linearizedBaseContracts = new Relation("ContractDefinition_linearizedBaseContracts", [["parentId", ContractDefinitionId], ["childId", ContractDefinitionId], ["idx", number]]);
+    export const ContractDefinition_linearizedBaseContracts_length = new Relation("ContractDefinition_linearizedBaseContracts_length", [["parentId", ContractDefinitionId], ["len", number]]);
     export const ContractDefinition_usedErrors = new Relation("ContractDefinition_usedErrors", [["parentId", ContractDefinitionId], ["childId", ErrorDefinitionId], ["idx", number]]);
+    export const ContractDefinition_usedErrors_length = new Relation("ContractDefinition_usedErrors_length", [["parentId", ContractDefinitionId], ["len", number]]);
     export const ContractDefinition_usedEvents = new Relation("ContractDefinition_usedEvents", [["parentId", ContractDefinitionId], ["childId", EventDefinitionId], ["idx", number]]);
+    export const ContractDefinition_usedEvents_length = new Relation("ContractDefinition_usedEvents_length", [["parentId", ContractDefinitionId], ["len", number]]);
     export const TupleExpression_components = new Relation("TupleExpression_components", [["parentId", TupleExpressionId], ["childId", ExpressionId], ["idx", number], ["realIdx", number]]);
+    export const TupleExpression_components_length = new Relation("TupleExpression_components_length", [["parentId", TupleExpressionId], ["len", number]]);
     export const FunctionDefinition_modifiers = new Relation("FunctionDefinition_modifiers", [["parentId", FunctionDefinitionId], ["childId", ModifierInvocationId], ["idx", number]]);
+    export const FunctionDefinition_modifiers_length = new Relation("FunctionDefinition_modifiers_length", [["parentId", FunctionDefinitionId], ["len", number]]);
     export const FunctionCall_arguments = new Relation("FunctionCall_arguments", [["parentId", FunctionCallId], ["childId", ExpressionId], ["idx", number]]);
+    export const FunctionCall_arguments_length = new Relation("FunctionCall_arguments_length", [["parentId", FunctionCallId], ["len", number]]);
     export const TryStatement_clauses = new Relation("TryStatement_clauses", [["parentId", TryStatementId], ["childId", TryCatchClauseId], ["idx", number]]);
+    export const TryStatement_clauses_length  = new Relation("TryStatement_clauses_length ", [["parentId", TryStatementId], ["len", number]]);
     export const VariableDeclarationStatement_declarations = new Relation("VariableDeclarationStatement_declarations", [["parentId", VariableDeclarationStatementId], ["childId", VariableDeclarationId], ["idx", number]]);
+    export const VariableDeclarationStatement_declarations_length = new Relation("VariableDeclarationStatement_declarations_length ", [["parentId", VariableDeclarationStatementId], ["len", number]]);
     export const InheritanceSpecifier_arguments = new Relation("InheritanceSpecifier_arguments", [["parentId", InheritanceSpecifierId], ["childId", ExpressionId], ["idx", number]]);
+    export const InheritanceSpecifier_arguments_length = new Relation("InheritanceSpecifier_arguments_length", [["parentId", InheritanceSpecifierId], ["len", number]]);
     export const ModifierInvocation_arguments = new Relation("ModifierInvocation_arguments", [["parentId", ModifierInvocationId], ["childId", ExpressionId], ["idx", number]]);
+    export const ModifierInvocation_arguments_length = new Relation("ModifierInvocation_arguments_length ", [["parentId", ModifierInvocationId], ["len", number]]);
     export const ParameterList_parameters = new Relation("ParameterList_parameters", [["parentId", ParameterListId], ["childId", VariableDeclarationId], ["idx", number]]);
+    export const ParameterList_parameters_length = new Relation("ParameterList_parameters_length", [["parentId", ParameterListId], ["len", number]]);
     export const Block_statements = new Relation("Block_statements", [["parentId", BlockId], ["childId", StatementId], ["idx", number]]);
+    export const Block_statements_length = new Relation("Block_statements_length ", [["parentId", BlockId], ["len", number]]);
     export const UncheckedBlock_statements = new Relation("UncheckedBlock_statements", [["parentId", UncheckedBlockId], ["childId", StatementId], ["idx", number]]);
+    export const UncheckedBlock_statements_length  = new Relation("UncheckedBlock_statements_length ", [["parentId", UncheckedBlockId], ["len", number]]);
     export const UsingForDirective_functionList = new Relation("UsingForDirective_functionList", [["parentId", UsingForDirectiveId], ["childId", IdentifierPathId], ["operator", symbol], ["idx", number]]);
+    export const UsingForDirective_functionList_length  = new Relation("UsingForDirective_functionList_length ", [["parentId", UsingForDirectiveId], ["len", number]]);
     export const StructDefinition_members = new Relation("StructDefinition_members", [["parentId", StructDefinitionId], ["childId", VariableDeclarationId], ["idx", number]]);
+    export const StructDefinition_members_length = new Relation("StructDefinition_members_length", [["parentId", StructDefinitionId], ["len", number]]);
     export const EnumDefinition_members = new Relation("EnumDefinition_members", [["parentId", EnumDefinitionId], ["childId", EnumValueId], ["idx", number]]);
+    export const EnumDefinition_members_length = new Relation("EnumDefinition_members_length", [["parentId", EnumDefinitionId], ["len", number]]);
     export const VariableDeclarationStatement_assignments = new Relation("VariableDeclarationStatement_assignments", [["parentId", VariableDeclarationStatementId], ["childId", VariableDeclarationId], ["idx", number], ["realIdx", number]]);
+    export const VariableDeclarationStatement_assignments_length = new Relation("VariableDeclarationStatement_assignments_length", [["parentId", VariableDeclarationStatementId], ["len", number]]);
     export const OverrideSpecifier_overrides = new Relation("OverrideSpecifier_overrides", [["parentId", OverrideSpecifierId], ["childId", id], ["idx", number]]);
+    export const OverrideSpecifier_overrides_length = new Relation("OverrideSpecifier_overrides_length", [["parentId", OverrideSpecifierId], ["len", number]]);
 
     export const FunctionCall_fieldNames = new Relation("FunctionCall_fieldNames", [["parentId", FunctionCallId], ["name", symbol], ["idx", number]]);
+    export const FunctionCall_fieldNames_length = new Relation("FunctionCall_fieldNames_length", [["parentId", FunctionCallId], ["len", number]]);
     export const PragmaDirective_literals = new Relation("PragmaDirective_literals", [["parentId", FunctionCallId], ["literal", symbol], ["idx", number]]);
+    export const PragmaDirective_literals_length = new Relation("PragmaDirective_literals_length", [["parentId", FunctionCallId], ["len", number]]);
     export const SourceUnit_exportedSymbols = new Relation("SourceUnit_exportedSymbols", [["parentId", SourceUnitId], ["name", symbol], ["id", id]]);
     export const FunctionCallOptions_options = new Relation("FunctionCallOptions_options", [["parentId", FunctionCallOptionsId], ["name", symbol], ["id", id]]);
     export const FunctionDefinition_signature = new Relation("FunctionDefinition_signature", [["funId", FunctionDefinitionId], ["signature", symbol]]);
@@ -874,6 +914,7 @@ function buildFactInvocation(className, constructor, baseName) {
     }
 `;
     }
+
     // Add relations for sparse array arguments
     for (let [paramName, ,] of params.slice(2)) {
         const canonicalParamName = getCanonicalParamName(className, paramName);
@@ -888,6 +929,7 @@ function buildFactInvocation(className, constructor, baseName) {
         }
 
         res += `
+    fs.addFacts(new Fact(rln.${className}_${paramName}_length, [nd.id, nd.${canonicalParamName}.length]));
     for (let realI = 0, i = 0; realI < nd.${canonicalParamName}.length; realI++) {
         let t = nd.${canonicalParamName}[realI];
 
@@ -953,6 +995,7 @@ function buildFactInvocation(className, constructor, baseName) {
         }
 
         let expr = `
+    fs.addFacts(new Fact(rln.${className}_${paramName}_length, [nd.id, nd.${canonicalParamName}.length]));
     for (let i = 0; i < nd.${canonicalParamName}.length; i++) {
         let t = nd.${canonicalParamName}[i];
         fs.addFacts(new Fact(rln.${className}_${paramName}, [${args.join(", ")}]));

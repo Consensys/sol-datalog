@@ -1,6 +1,6 @@
 {
     "cg.path": {
-        "fmt": "{0}.name calls {1}.name via {2}",
+        "fmt": "{0}.name calls {1}.name via {3}",
         "data": [
             "a calls c via [Foo:a,Foo:c]",
             "a calls d via [Foo:a,Foo:c,Foo:d]",

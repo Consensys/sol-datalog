@@ -1,9 +1,17 @@
-import { assert, ASTContext, ASTNode } from "solc-typed-ast";
+import { assert, ASTContext, ASTNode, FunctionDefinition } from "solc-typed-ast";
 import * as DL from "souffle.ts";
 import { pp } from "./pp";
 
 export type RelationFieldObj = { [key: string]: RelationField };
-export type RelationField = ASTNode | string | number | boolean | ASTNode[] | RelationFieldObj;
+export type RelationField =
+    | ASTNode
+    | string
+    | number
+    | boolean
+    | ASTNode[]
+    | RelationFieldObj
+    | RelationFieldObj[]
+    | null;
 
 const stringTypeAliases = new Set([
     "ContractKind",
@@ -80,6 +88,45 @@ function liftValue(val: DL.FieldVal, type: DL.DatalogType, ctx: ASTContext): Rel
 
             return res;
         }
+
+        if (type.name === "Context") {
+            if (val === null) {
+                return null;
+            }
+
+            const recVal = val as DL.RecordVal;
+            const contract = ctx.locate(Number(recVal.mdc));
+            let rawCallList = recVal.callList as DL.RecordVal | null;
+            const callList: RelationFieldObj[] = [];
+
+            while (rawCallList !== null) {
+                const head = rawCallList.head as DL.ADTVal;
+                switch (head[0]) {
+                    case "Node":
+                        callList.push({ type: "Node", id: ctx.locate(Number(head[1].id)) });
+                        break;
+                    case "Call":
+                        callList.push({
+                            type: "Call",
+                            id: ctx.locate(Number(head[1].id)),
+                            target: ctx.locate(Number(head[1].target))
+                        });
+                        break;
+                    case "Modifier":
+                        callList.push({
+                            type: "Modifier",
+                            id: ctx.locate(Number(head[1].id)),
+                            idx: ctx.locate(Number(head[1].idx))
+                        });
+                        break;
+                    default:
+                        assert(false, `Unknown CallListNode ${head[0]}`);
+                }
+                rawCallList = rawCallList.tail as DL.RecordVal | null;
+            }
+
+            return { mdc: contract, callList };
+        }
     }
 
     if (type instanceof DL.ADTT) {
@@ -97,6 +144,16 @@ function liftValue(val: DL.FieldVal, type: DL.DatalogType, ctx: ASTContext): Rel
     }
 
     assert(false, `Unknown datalog type ${type.name}`);
+}
+
+function getSource(val: ASTNode, files?: Map<number, Uint8Array>): string {
+    const unitId = Number(val["src"].split(":")[2]);
+    assert(files !== undefined, `Need a source map to decode source format`);
+    const source = files.get(unitId);
+    assert(source !== undefined, `Unknown source for SourceUnit with id ${unitId}`);
+    return new TextDecoder("utf-8")
+        .decode((val as ASTNode).extractSourceFragment(source))
+        .replaceAll("\n", "\\n");
 }
 
 export class Fact {
@@ -129,20 +186,33 @@ export class Fact {
 
                         // Special case - if its .source then extract the corresponding source fragment
                         if (comp === "source") {
-                            const unitId = Number(val["src"].split(":")[2]);
-                            assert(
-                                files !== undefined,
-                                `Need a source map to decode source format`
-                            );
-                            const source = files.get(unitId);
-                            assert(
-                                source !== undefined,
-                                `Unknown source for SourceUnit with id ${unitId}`
-                            );
-                            val = new TextDecoder("utf-8")
-                                .decode((val as ASTNode).extractSourceFragment(source))
-                                .replaceAll("\n", "\\n");
+                            val = getSource(val as ASTNode, files);
+                            continue;
+                        }
 
+                        if (comp === "interproc_ctx") {
+                            if (val === null) {
+                                val = "";
+                                continue;
+                            }
+
+                            const els: string[] = [];
+                            for (const node of val.callList) {
+                                if (node.type === "Node") {
+                                    els.push(getSource(node.id as ASTNode, files));
+                                } else if (node.type === "Call") {
+                                    els.push(getSource(node.id as ASTNode, files));
+                                } else if (node.type === "Modifier") {
+                                    const modInv = (node.id as FunctionDefinition).vModifiers[
+                                        node.idx
+                                    ];
+                                    els.push(getSource(modInv, files));
+                                } else {
+                                    assert(false, `Unknown node type ${node.type}`);
+                                }
+                            }
+
+                            val = els.join("::");
                             continue;
                         }
 

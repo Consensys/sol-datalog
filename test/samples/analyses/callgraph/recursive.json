@@ -1,6 +1,6 @@
 {
     "cg.path": {
-        "fmt": "{0}.vScope.name {0}.name calls {1}.name via ${2}",
+        "fmt": "{0}.vScope.name {0}.name calls {1}.name via ${3}",
         "data": [
             "Foo nonRec calls a via $[Foo:nonRec,Foo:a]",
             "Foo nonRec calls b via $[Foo:nonRec,Foo:a,Foo:b]",

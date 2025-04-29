@@ -1,0 +1,95 @@
+.type CallListNode = Node { id: id }
+                  | Call { id: CallsiteType, target: CalleeType }
+                  | Modifier { id: FunctionDefinitionId, idx: number }
+                  | BaseConstructor { mdc: ContractDefinitionId, baseIdx: number }
+.type CallList = [ head: CallListNode , tail: CallList ]
+.type Context = [ mdc: ContractDefinitionId, callList: CallList]
+.functor findRecursiveCall(callList: CallList, fun: id): CallList stateful
+.functor concatCallLists(a: CallList, b: CallList): CallList stateful
+
+.comp InterproceduralSuccessor : Graph<Context> {
+    .decl functionCallList(fun: FunctionDefinitionId, inContract: ContractDefinitionId, callList: CallList)
+    functionCallList(fun, inContract, [$Node(bodyFirst), nil]) :-
+        ContractDefinition(inContract),
+        !FunctionDefinition_modifiers(fun, _, _),
+        FunctionDefinition_body(fun, body, 1),
+        cfg.succ.succ_first(body, bodyFirst).
+
+    functionCallList(fun, inContract, [$Node(bodyFirst), [$Modifier(fun, 0), nil]]) :-
+        FunctionDefinition_modifiers(fun, modInv, 0),
+        ModifierInvocation_vReferencedDeclaration(modInv, modDef),
+        ModifierDefinition(modDef),
+        // Handle virtual modifiers using resolvesTo
+        inh.resolvesTo(modDef, actualModDef, inContract),
+        FunctionDefinition_body(actualModDef, body, 1),
+        cfg.succ.succ_first(body, bodyFirst).
+
+    // Helper relation finding all concrete (most derived) function definitions that may be called
+    // when entering a given contract. Note this ignores constructors as they are handled separately
+    .decl entrypointIn(fun: FunctionDefinitionId, inContract: ContractDefinitionId)
+    entrypointIn(fun, inContract) :-
+        inh.resolvesTo(_, fun, inContract), 
+        // In 0.4.x visibility could be omitted ("default") which defaults to public.
+        (FunctionDefinition_visibility(fun, "public"); FunctionDefinition_visibility(fun, "external") ; FunctionDefinition_visibility(fun, "default")),
+        // Note we handle constructors separately
+        FunctionDefinition_isConstructor(fun, 0).
+
+    // ===================== Main edge relation ========================================
+    // We have edges from start (nil) to any public/external functions
+    edge(nil, [mdc, callList]) :-
+        entrypointIn(fun, mdc),
+        functionCallList(fun, mdc, callList).
+
+    // Inherit all non-call edges from intraprocedural cfg
+    edge([mdc, [$Node(n1), callList]], [mdc, [$Node(n2), callList]]) :-
+        edge(_, [mdc, [$Node(n1), callList]]),
+        cfg.succ.edge(n1, n2),
+        !mayCallIn(n2, _, mdc).
+        
+    // For all non-recursive calls add an edge to the
+    // entry of the callee with the callsite added to the callList.
+    edge([mdc, [$Node(n1), callList]], [mdc, newCallList]) :-
+        edge(_, [mdc, [$Node(n1), callList]]),
+        cfg.succ.edge(n1, n2),
+        mayCallIn(n2, fun, mdc),
+        @findRecursiveCall(callList, fun) = nil,
+        functionCallList(fun, mdc, funCallListSuffix),
+        newCallList = @concatCallLists(@concatCallLists(funCallListSuffix, [$Call(n2, fun), nil]), callList).
+
+    // For recursive calls add an edge to the entry of the callee, at the
+    // earlier call list where it was invoked.
+    edge([mdc, [$Node(n1), callList]], [mdc, newCallList]) :-
+        edge(_, [mdc, [$Node(n1), callList]]),
+        cfg.succ.edge(n1, n2),
+        mayCallIn(n2, fun, mdc),
+        @findRecursiveCall(callList, fun) = earlierRecCallList,
+        earlierRecCallList != nil,
+        functionCallList(fun, mdc, funCallListSuffix),
+        newCallList = @concatCallLists(funCallListSuffix, earlierRecCallList).
+
+    // For all recursive calls we remember the callList at the recursive call site as an
+    // additional recursive return
+    .decl additionalRecursiveReturn(fun: FunctionDefinitionId, mdc: ContractDefinitionId, callList: CallList)
+    additionalRecursiveReturn(fun, mdc, [$Call(n2, fun), callList]) :-
+        edge(_, [mdc, [$Node(n1), callList]]),
+        cfg.succ.edge(n1, n2),
+        mayCallIn(n2, fun, mdc),
+        @findRecursiveCall(callList, fun) != nil.
+
+    // Normal return edge
+    edge([mdc, [$Node(n), [$Call(callsite, fun), rest]]], [mdc, [$Node(callsite), rest]]) :-
+        edge(_, [mdc, [$Node(n), [$Call(callsite, fun), rest]]]),
+        (
+            Return(n) ;
+            (Block(n) ; UncheckedBlock(n)), parent(p, n), FunctionDefinition(p)
+        ).
+
+    // Return to additional recursive callsites
+    edge([mdc, [$Node(n), [$Call(callsite, fun), rest]]], [mdc, [$Node(otherCallsite), otherCallList]]) :-
+        edge(_, [mdc, [$Node(n), [$Call(callsite, fun), rest]]]),
+        (
+            Return(n) ;
+            (Block(n) ; UncheckedBlock(n)), parent(p, n), FunctionDefinition(p)
+        ),
+        additionalRecursiveReturn(fun, mdc, [$Call(otherCallsite, fun), otherCallList]).
+}

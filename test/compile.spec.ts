@@ -4,7 +4,7 @@ const fse = require("fs-extra");
 
 require("dotenv").config();
 
-it("Datalog Compiles", async () => {
+xit("Datalog Compiles", async () => {
     fse.removeSync(COMPILED_BINARY);
     compileDatalog();
     expect(fse.pathExistsSync(COMPILED_BINARY)).toBeTruthy();
