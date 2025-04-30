@@ -1,3 +1,4 @@
+#include <souffle/RamTypes.h>
 #include <souffle/SouffleInterface.h>
 #include <iostream>
 
@@ -53,6 +54,12 @@ extern "C"
         if (a == 0)
         {
             return b;
+        }
+
+        // Second list is empty - just return the first
+        if (b == 0)
+        {
+            return a;
         }
 
         const souffle::RamDomain *tuple = recordTable->unpack(a, 2);
