@@ -44,7 +44,23 @@ mayCall(callsite, target) :-
 
 /// Relation computing the set of possible targets for a call in the context of a specific contract.
 .decl mayCallIn(callsite: CallsiteType, target: CalleeType, inContract: ContractDefinitionId)
+
+// Case 1: The callee is a Contract method that resolves to target
 mayCallIn(callsite, target, inContract) :-
     mayCall(callsite, def),
     inh.resolvesTo(def, target, inContract),
     FunctionDefinition(target).
+
+// Case 2: The callee is a global function
+mayCallIn(callsite, def, inContract) :-
+    mayCall(callsite, def),
+    FunctionDefinition_scope(def, scope),
+    SourceUnit(scope),
+    ContractDefinition(inContract).
+
+// Case 3: The callee is a library function
+mayCallIn(callsite, def, inContract) :-
+    mayCall(callsite, def),
+    FunctionDefinition_scope(def, scope),
+    ContractDefinition_kind(scope, "library"),
+    ContractDefinition(inContract).

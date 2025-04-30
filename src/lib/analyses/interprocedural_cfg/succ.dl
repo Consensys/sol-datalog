@@ -44,7 +44,7 @@
     edge([mdc, [$Node(n1), callList]], [mdc, [$Node(n2), callList]]) :-
         edge(_, [mdc, [$Node(n1), callList]]),
         cfg.succ.edge(n1, n2),
-        !mayCallIn(n2, _, mdc).
+        (!mayCallIn(n2, _, mdc) ; externalCall(n2)).
         
     // For all non-recursive calls add an edge to the
     // entry of the callee with the callsite added to the callList.
@@ -52,6 +52,7 @@
         edge(_, [mdc, [$Node(n1), callList]]),
         cfg.succ.edge(n1, n2),
         mayCallIn(n2, fun, mdc),
+        !externalCall(n2),
         @findRecursiveCall(callList, fun) = nil,
         functionCallList(fun, mdc, funCallListSuffix),
         newCallList = @concatCallLists(@concatCallLists(funCallListSuffix, [$Call(n2, fun), nil]), callList).
@@ -62,6 +63,7 @@
         edge(_, [mdc, [$Node(n1), callList]]),
         cfg.succ.edge(n1, n2),
         mayCallIn(n2, fun, mdc),
+        !externalCall(n2),
         @findRecursiveCall(callList, fun) = earlierRecCallList,
         earlierRecCallList != nil,
         functionCallList(fun, mdc, funCallListSuffix),

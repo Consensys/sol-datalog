@@ -1,0 +1,24 @@
+{
+    "interprocCFG.succ.edge": {
+        "fmt": "{0}.interproc_ctx -> {1}.interproc_ctx",
+        "data": [
+            " -> a",
+            "a -> b",
+            "b -> d::a + b",
+            "d::a + b -> MyUint::a + b",
+            "MyUint::a + b -> MyUint.unwrap::a + b",
+            "MyUint.unwrap::a + b -> MyUint.unwrap(d)::a + b",
+            "MyUint.unwrap(d)::a + b -> e::a + b",
+            "e::a + b -> MyUint::a + b",
+            "MyUint::a + b -> MyUint.unwrap::a + b",
+            "MyUint.unwrap::a + b -> MyUint.unwrap(e)::a + b",
+            "MyUint.unwrap(e)::a + b -> MyUint.unwrap(d) + MyUint.unwrap(e)::a + b",
+            "MyUint.unwrap(d) + MyUint.unwrap(e)::a + b -> MyUint::a + b",
+            "MyUint::a + b -> MyUint.wrap::a + b",
+            "MyUint.wrap::a + b -> MyUint.wrap(MyUint.unwrap(d) + MyUint.unwrap(e))::a + b",
+            "MyUint.wrap(MyUint.unwrap(d) + MyUint.unwrap(e))::a + b -> return MyUint.wrap(MyUint.unwrap(d) + MyUint.unwrap(e))::a + b",
+            "return MyUint.wrap(MyUint.unwrap(d) + MyUint.unwrap(e))::a + b -> a + b",
+            "a + b -> return a + b"
+        ]
+    }
+}

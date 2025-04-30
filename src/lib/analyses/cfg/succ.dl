@@ -228,7 +228,7 @@
     edge(prev, next) :-
         externalCall(next),
         FunctionCall_expression(next, prev),
-        (!FunctionCall_arguments(next, _, 0)).
+        !FunctionCall_arguments(next, _, _).
 
     // Ordering between args - same for internal and external calls
     edge(prev, next) :-

@@ -1,0 +1,40 @@
+{
+    "interprocCFG.succ.edge": {
+        "fmt": "{0}.interproc_ctx -> {1}.interproc_ctx",
+        "data": [
+            " -> x",
+            " -> 1",
+            "x -> 1",
+            "1 -> x",
+            "1 -> x+1",
+            "x -> x = 1",
+            "x+1 -> return x+1",
+            "x = 1 -> x = 1",
+            "x = 1 -> foo",
+            "foo -> 2::foo()",
+            "2::foo() -> x::foo()",
+            "x::foo() -> x = 2::foo()",
+            "x = 2::foo() -> x = 2::foo()",
+            "x = 2::foo() -> {\\n    x = 2;\\n  }::foo()",
+            "{\\n    x = 2;\\n  }::foo() -> foo()",
+            "foo() -> foo()",
+            "foo() -> o",
+            "o -> o.boo",
+            "o.boo -> 42",
+            "o.boo -> o.boo(42)",
+            "42 -> o.boo(42)",
+            "o.boo(42) -> x",
+            "x -> x = o.boo(42)",
+            "x = o.boo(42) -> x = o.boo(42)",
+            "x = o.boo(42) -> moo",
+            "moo -> 4::moo()",
+            "4::moo() -> x::moo()",
+            "x::moo() -> x = 4::moo()",
+            "x = 4::moo() -> x = 4::moo()",
+            "x = 4::moo() -> {\\n    x = 4;\\n  }::moo()",
+            "{\\n    x = 4;\\n  }::moo() -> moo()",
+            "moo() -> moo()",
+            "moo() -> {\\n    x = 1;\\n    foo();\\n    x = o.boo(42);\\n    moo();\\n  }"
+        ]
+    }
+}
