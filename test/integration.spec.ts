@@ -4,6 +4,7 @@ import * as sol from "solc-typed-ast";
 import { searchRecursive } from "../src/lib/utils";
 import { CSVFactSet, FactSet, runCompiled } from "souffle.ts";
 import { COMPILED_BINARY, facts, getRelation } from "../src";
+import { GEN_DIR } from "../src/gen";
 
 require("dotenv").config();
 
@@ -103,7 +104,7 @@ describe("Integration test on samples", () => {
                 const outputFS = new CSVFactSet([getRelation("cfg.dominate")]);
 
                 const p = (async () => {
-                    await runCompiled(inputFS, outputFS, COMPILED_BINARY);
+                    await runCompiled(inputFS, outputFS, COMPILED_BINARY, GEN_DIR);
                     outputFS.release();
                 })();
 

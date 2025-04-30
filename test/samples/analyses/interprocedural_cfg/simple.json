@@ -1,6 +1,32 @@
 {
     "interprocCFG.succ.edge": {
         "fmt": "{0}.interproc_ctx -> {1}.interproc_ctx",
-        "data": []
+        "data": [
+            " -> 1",
+            "1 -> x",
+            "x -> x = 1",
+            "x = 1 -> x = 1",
+            "x = 1 -> moo",
+            "moo -> boo::moo()",
+            "boo::moo() -> foo::boo()::moo()",
+            "foo::boo()::moo() -> 2::foo()::boo()::moo()",
+            "2::foo()::boo()::moo() -> x::foo()::boo()::moo()",
+            "x::foo()::boo()::moo() -> x = 2::foo()::boo()::moo()",
+            "x = 2::foo()::boo()::moo() -> x = 2::foo()::boo()::moo()",
+            "x = 2::foo()::boo()::moo() -> {\\n    x = 2;\\n  }::foo()::boo()::moo()",
+            "{\\n    x = 2;\\n  }::foo()::boo()::moo() -> foo()::boo()::moo()",
+            "foo()::boo()::moo() -> foo()::boo()::moo()",
+            "foo()::boo()::moo() -> {\\n    foo();\\n  }::boo()::moo()",
+            "{\\n    foo();\\n  }::boo()::moo() -> boo()::moo()",
+            "boo()::moo() -> boo()::moo()",
+            "boo()::moo() -> {\\n    boo();\\n  }::moo()",
+            "{\\n    boo();\\n  }::moo() -> moo()",
+            "moo() -> moo()",
+            "moo() -> 3",
+            "3 -> x",
+            "x -> x = 3",
+            "x = 3 -> x = 3",
+            "x = 3 -> {\\n    x = 1;\\n    moo();\\n    x = 3;\\n  }"
+        ]
     }
 }

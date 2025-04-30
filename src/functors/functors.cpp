@@ -32,13 +32,10 @@ extern "C"
                     // Recursive call detected
                     return callList;
                 }
-                break;
             }
 
             callList = nextCallList;
         }
-
-        cerr << "\n";
 
         return 0;
     }
