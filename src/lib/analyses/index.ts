@@ -117,6 +117,10 @@ export const AVAILABLE_ANALYSES: dl.Relation[] = [
         ["prev", IdT],
         ["next", IdT]
     ]),
+    new dl.Relation("cfg.succ.edge", [
+        ["prev", IdT],
+        ["next", IdT]
+    ]),
     new dl.Relation("cfg.succ.path", [
         ["prev", IdT],
         ["next", IdT],

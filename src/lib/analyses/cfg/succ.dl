@@ -267,7 +267,7 @@
 
     // After the base is the whole call
     edge(prev, next) :-
-        internalCall(fcId),
+        internalCall(next),
         FunctionCall_expression(next, prev).
 
     // ---- MemberAccess

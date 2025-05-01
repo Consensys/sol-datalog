@@ -21,7 +21,6 @@
             "foo() -> o",
             "o -> o.boo",
             "o.boo -> 42",
-            "o.boo -> o.boo(42)",
             "42 -> o.boo(42)",
             "o.boo(42) -> x",
             "x -> x = o.boo(42)",
