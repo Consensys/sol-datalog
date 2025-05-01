@@ -1,0 +1,18 @@
+{
+    "interprocCFG.succ.edge": {
+        "fmt": "{0}.interproc_ctx -> {1}.interproc_ctx",
+        "data": [
+            " -> a",
+            "a -> Lib",
+            "Lib -> Lib.inc",
+            "Lib.inc -> x::Lib.inc(a)",
+            "x::Lib.inc(a) -> 1::Lib.inc(a)",
+            "1::Lib.inc(a) -> x + 1::Lib.inc(a)",
+            "x + 1::Lib.inc(a) -> return x + 1::Lib.inc(a)",
+            "return x + 1::Lib.inc(a) -> Lib.inc(a)",
+            "Lib.inc(a) -> uint b = Lib.inc(a)",
+            "uint b = Lib.inc(a) -> b",
+            "b -> return b"
+        ]
+    }
+}
