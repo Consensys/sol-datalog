@@ -46,7 +46,8 @@ export const CallListNodeT = new dl.ADTT("CallListNode", [
         "Modifier",
         [
             ["id", IdT],
-            ["idx", dl.NumberT]
+            ["idx", dl.NumberT],
+            ["placeHolder", dl.NumberT]
         ]
     ],
     [

@@ -113,10 +113,13 @@ function liftValue(val: DL.FieldVal, type: DL.DatalogType, ctx: ASTContext): Rel
                         });
                         break;
                     case "Modifier":
+                        const placeHolderId = Number(head[1].placeHolder);
+                        const placeHolder = placeHolderId === -1 ? null : ctx.locate(placeHolderId)
                         callList.push({
                             type: "Modifier",
                             id: ctx.locate(Number(head[1].id)),
-                            idx: ctx.locate(Number(head[1].idx))
+                            idx: Number(head[1].idx),
+                            placeHolder
                         });
                         break;
                     default:
@@ -206,7 +209,7 @@ export class Fact {
                                     const modInv = (node.id as FunctionDefinition).vModifiers[
                                         node.idx
                                     ];
-                                    els.push(getSource(modInv, files));
+                                    els.push(modInv ? getSource(modInv, files) : `<fun body>`);
                                 } else {
                                     assert(false, `Unknown node type ${node.type}`);
                                 }

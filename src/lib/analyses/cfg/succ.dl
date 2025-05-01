@@ -616,6 +616,8 @@
     // Note: succ relation doesnt do anything with placehodler statements.
     // We use a higher-level relation to tie toghether placeholders and function
     // modifiers in the context of a particular FunctionDefinition.
+    succ_first(ph, ph) :-
+        PlaceholderStatement(ph).
 
     // --- EmitStatement
     succ_first(esId, first) :-
