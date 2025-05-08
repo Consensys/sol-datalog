@@ -2,10 +2,16 @@
     "interprocCFG.succ.edge": {
         "fmt": "{0}.interproc_ctx -> {1}.interproc_ctx",
         "data": [
-            " -> 1::M(arg+1)",
+            " -> arg::M(arg+1)",
+            "arg::M(arg+1) -> 1::M(arg+1)",
+            "1::M(arg+1) -> arg+1::M(arg+1)",
+            "arg+1::M(arg+1) -> 1::M(arg+1)",
             "1::M(arg+1) -> 1::M(arg+1)",
-            "1::M(arg+1) -> 5::M2(arg+2)::M(arg+1)",
+            "1::M(arg+1) -> arg::M2(arg+2)::M(arg+1)",
             "_::M(arg+1) -> 2::M(arg+1)",
+            "arg::M2(arg+2)::M(arg+1) -> 2::M2(arg+2)::M(arg+1)",
+            "2::M2(arg+2)::M(arg+1) -> arg+2::M2(arg+2)::M(arg+1)",
+            "arg+2::M2(arg+2)::M(arg+1) -> 5::M2(arg+2)::M(arg+1)",
             "5::M2(arg+2)::M(arg+1) -> 5::M2(arg+2)::M(arg+1)",
             "5::M2(arg+2)::M(arg+1) -> 3::<fun body>::M2(arg+2)::M(arg+1)",
             "_::M2(arg+2)::M(arg+1) -> 6::M2(arg+2)::M(arg+1)",

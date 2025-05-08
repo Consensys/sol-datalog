@@ -1,0 +1,23 @@
+{
+    "interprocCFG.succ.edge": {
+        "fmt": "{0}.interproc_ctx -> {1}.interproc_ctx",
+        "data": [
+            " -> 300::M(foo(300))",
+            "300::M(foo(300)) -> foo::M(foo(300))",
+            "foo::M(foo(300)) -> arg::foo(300)::M(foo(300))",
+            "foo(300)::M(foo(300)) -> 2::M(foo(300))",
+            "arg::foo(300)::M(foo(300)) -> 1000::foo(300)::M(foo(300))",
+            "1000::foo(300)::M(foo(300)) -> arg + 1000::foo(300)::M(foo(300))",
+            "arg + 1000::foo(300)::M(foo(300)) -> return arg + 1000::foo(300)::M(foo(300))",
+            "return arg + 1000::foo(300)::M(foo(300)) -> foo(300)::M(foo(300))",
+            "2::M(foo(300)) -> 2::M(foo(300))",
+            "2::M(foo(300)) -> 3::<fun body>::M(foo(300))",
+            "_::M(foo(300)) -> 4::M(foo(300))",
+            "3::<fun body>::M(foo(300)) -> 3::<fun body>::M(foo(300))",
+            "3::<fun body>::M(foo(300)) -> {\\n        3;\\n    }::<fun body>::M(foo(300))",
+            "{\\n        3;\\n    }::<fun body>::M(foo(300)) -> _::M(foo(300))",
+            "4::M(foo(300)) -> 4::M(foo(300))",
+            "4::M(foo(300)) -> {\\n        2;\\n        _;\\n        4;\\n    }::M(foo(300))"
+       ]
+    }
+}

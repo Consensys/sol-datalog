@@ -14,32 +14,44 @@
         FunctionDefinition_body(_, n, 1) ;
         ModifierDefinition_body(_, n, 1).
 
-    // Helper to determine to which exact `ModifierDefinition` does the i-th `ModifierInvocation` in `fun` refer to in contract `inContract`
-    // This handles virtual modifiers
-    .decl modInvBodyIs(fun: FunctionDefinitionId, inContract: ContractDefinitionId, idx: number, body: BlockId)
-    modInvBodyIs(fun, inContract, idx, body) :-
+    // Helper function to compute the call list corresponding to the first node to execute in a modifier invocation 
+    // `modInv` in contract `inContract`.
+    .decl modifierFirst(fun: FunctionDefinitionId, inContract: ContractDefinitionId, idx: number, firstCallList: CallList)
+
+    // Case 1: Modifier has no args - first node in the body
+    modifierFirst(fun, inContract, idx, [$Node(bodyFirst), nil]) :-
         FunctionDefinition_modifiers(fun, modInv, idx),
+        !ModifierInvocation_arguments(modInv, _, _),
         ModifierInvocation_vReferencedDeclaration(modInv, modDef),
         ModifierDefinition(modDef),
-        // Handle virtual modifiers using resolvesTo
         inh.resolvesTo(modDef, actualModDef, inContract),
-        ModifierDefinition_body(actualModDef, body, 1).
+        ModifierDefinition_body(actualModDef, body, 1),
+        cfg.succ.succ_first(body, bodyFirst).
 
-    // Helper function to compute the call list that should be apended to the current context if we enter the
-    // function `fun` in contract `inContract`.
-    .decl functionCallList(fun: FunctionDefinitionId, inContract: ContractDefinitionId, callList: CallList)
+    // Case 2: Modifier has args - first arg
+    modifierFirst(fun, inContract, idx, [$Node(argFirst), nil]) :-
+        FunctionDefinition_modifiers(fun, modInv, idx),
+        inh.resolvesTo(_, fun, inContract),
+        ModifierInvocation_vReferencedDeclaration(modInv, modDef),
+        ModifierDefinition(modDef),
+        ModifierInvocation_arguments(modInv, firstArg, 0),
+        cfg.succ.succ_first(firstArg, argFirst).
+
+    // Helper function to compute the call list corresponding to the first node to execute in function `fun` in 
+    // contract `inContract`.
+    .decl funFirst(fun: FunctionDefinitionId, inContract: ContractDefinitionId, callList: CallList)
 
     // Case 1: fun doesnt have modifiers - just add the first thing in the body
-    functionCallList(fun, inContract, [$Node(bodyFirst), nil]) :-
+    funFirst(fun, inContract, [$Node(bodyFirst), nil]) :-
         ContractDefinition(inContract),
         !FunctionDefinition_modifiers(fun, _, _),
         FunctionDefinition_body(fun, body, 1),
         cfg.succ.succ_first(body, bodyFirst).
 
     // Case 2: fun has modifiers - just add the first thing in the first modifier's body 
-    functionCallList(fun, inContract, [$Node(bodyFirst), [$Modifier(fun, 0, -1), nil]]) :-
-        modInvBodyIs(fun, inContract, 0, body),
-        cfg.succ.succ_first(body, bodyFirst).
+    funFirst(fun, inContract, newCallList) :-
+        modifierFirst(fun, inContract, 0, modEntryCallList),
+        newCallList = @concatCallLists(modEntryCallList, [$Modifier(fun, 0, -1), nil]).
 
     // Helper relation finding all public/external function definitions that may be called
     // when entering a given contract. Note this ignores constructors as they are handled separately
@@ -57,7 +69,7 @@
     // We have edges from start (nil) to any public/external functions
     edge(nil, [mdc, callList]) :-
         entrypointIn(fun, mdc),
-        functionCallList(fun, mdc, callList).
+        funFirst(fun, mdc, callList).
 
     // Inherit all non-call edges from intraprocedural cfg. 
     // Note we allow external calls here - they are considerd orthogonal to the interprocedural CFG since
@@ -77,7 +89,7 @@
         mayCallIn(n2, fun, mdc),
         !externalCall(n2),
         @findRecursiveCall(callList, fun) = nil,
-        functionCallList(fun, mdc, funCallListSuffix),
+        funFirst(fun, mdc, funCallListSuffix),
         newCallList = @concatCallLists(@concatCallLists(funCallListSuffix, [$Call(n2, fun), nil]), callList).
 
     // For recursive calls add an edge to the entry of the callee, at the
@@ -89,7 +101,7 @@
         !externalCall(n2),
         @findRecursiveCall(callList, fun) = earlierRecCallList,
         earlierRecCallList != nil,
-        functionCallList(fun, mdc, funCallListSuffix),
+        funFirst(fun, mdc, funCallListSuffix),
         newCallList = @concatCallLists(funCallListSuffix, earlierRecCallList).
 
     // For all recursive calls we remember the callList at the recursive call site as an
@@ -123,13 +135,16 @@
     // When encountering a place-holder if there is a ModifierInvocation enter it.
     edge(
         [mdc, [$Node(n1), [$Modifier(fun, modInvIdx, oldPlaceHolder), callList]]],
-        [mdc, [$Node(n2), [$Modifier(fun, modInvIdx + 1, placeHolder), [$Modifier(fun, modInvIdx, oldPlaceHolder), callList]]]]
+        [mdc, newCallList]
     ) :-
         edge(_, [mdc, [$Node(n1), [$Modifier(fun, modInvIdx, oldPlaceHolder), callList]]]),
         cfg.succ.edge(n1, placeHolder),
         PlaceholderStatement(placeHolder),
-        modInvBodyIs(fun, mdc, modInvIdx + 1, body),
-        cfg.succ.succ_first(body, n2).
+        modifierFirst(fun, mdc, modInvIdx + 1, nextModCallList),
+        newCallList = @concatCallLists(
+            nextModCallList,
+            [$Modifier(fun, modInvIdx + 1, placeHolder), [$Modifier(fun, modInvIdx, oldPlaceHolder), callList]]
+        ).
 
     // When encountering a place-holder if there is no next ModifierInvocation enter the function.
     // Note we push a dummy `$Modifier(fun, -1, placeHolder)` on the callList to remember the last placeholder.
@@ -162,4 +177,31 @@
     ) :-
         edge(_, [mdc, [$Node(n), [$Modifier(fun, modInvIdx, -1), [$Call(callsite, target), rest]]]]),
         isNodeEndOfFunOrMod(n).
+
+    // --------------------- Modifiers Arugments -------------------------------------
+    // When one argument is done, go to the next
+    edge(
+        [mdc, [$Node(n1), [$Modifier(fun, modInvIdx, placeHolder), rest]]],
+        [mdc, [$Node(n2), [$Modifier(fun, modInvIdx, placeHolder), rest]]]
+    ) :-
+        edge(_, [mdc, [$Node(n1), [$Modifier(fun, modInvIdx, placeHolder), rest]]]),
+        FunctionDefinition_modifiers(fun, modInv, modInvIdx),
+        ModifierInvocation_arguments(modInv, n1, modInvIdx),
+        ModifierInvocation_arguments(modInv, nextArg, modInvIdx + 1),
+        cfg.succ.succ_first(nextArg, n2).
+
+    // When last argument is done, go to the body of the modifier 
+    edge(
+        [mdc, [$Node(n1), [$Modifier(fun, modInvIdx, placeHolder), rest]]],
+        [mdc, [$Node(bodyFirst), [$Modifier(fun, modInvIdx, placeHolder), rest]]]
+    ) :-
+        edge(_, [mdc, [$Node(n1), [$Modifier(fun, modInvIdx, placeHolder), rest]]]),
+        FunctionDefinition_modifiers(fun, modInv, modInvIdx),
+        ModifierInvocation_arguments(modInv, n1, argIdx),
+        !ModifierInvocation_arguments(modInv, _, argIdx + 1),
+        ModifierInvocation_vReferencedDeclaration(modInv, modDef),
+        ModifierDefinition(modDef),
+        inh.resolvesTo(modDef, actualModDef, inContract),
+        ModifierDefinition_body(actualModDef, body, 1),
+        cfg.succ.succ_first(body, bodyFirst).
 }

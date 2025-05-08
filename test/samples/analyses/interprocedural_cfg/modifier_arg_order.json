@@ -1,0 +1,27 @@
+{
+    "interprocCFG.succ.edge": {
+        "fmt": "{0}.interproc_ctx -> {1}.interproc_ctx",
+        "data": [
+            " -> x::M1(x++)",
+            "x::M1(x++) -> x++::M1(x++)",
+            "x++::M1(x++) -> x::M1(x++)",
+            "x::M1(x++) -> arr::M1(x++)",
+            "arr::M1(x++) -> arr.push::M1(x++)",
+            "arr.push::M1(x++) -> arr.push(x)::M1(x++)",
+            "arr.push(x)::M1(x++) -> arr.push(x)::M1(x++)",
+            "arr.push(x)::M1(x++) -> 2::M2(x+=2)::M1(x++)",
+            "_::M1(x++) -> {\\n        arr.push(x);\\n        _;\\n    }::M1(x++)",
+            "2::M2(x+=2)::M1(x++) -> x::M2(x+=2)::M1(x++)",
+            "x::M2(x+=2)::M1(x++) -> x+=2::M2(x+=2)::M1(x++)",
+            "x+=2::M2(x+=2)::M1(x++) -> x::M2(x+=2)::M1(x++)",
+            "x::M2(x+=2)::M1(x++) -> arr::M2(x+=2)::M1(x++)",
+            "arr::M2(x+=2)::M1(x++) -> arr.push::M2(x+=2)::M1(x++)",
+            "arr.push::M2(x+=2)::M1(x++) -> arr.push(x)::M2(x+=2)::M1(x++)",
+            "arr.push(x)::M2(x+=2)::M1(x++) -> arr.push(x)::M2(x+=2)::M1(x++)",
+            "arr.push(x)::M2(x+=2)::M1(x++) -> {\\n        // Afterwards arr will have [1,3] as contents.\\n        // meaning we evalute first M1's argument, then M1's body up to the placeholder,\\n        // then M2' argument.\\n    }::<fun body>::M2(x+=2)::M1(x++)",
+            "_::M2(x+=2)::M1(x++) -> {\\n        arr.push(x);\\n        _;\\n    }::M2(x+=2)::M1(x++)",
+            "{\\n        // Afterwards arr will have [1,3] as contents.\\n        // meaning we evalute first M1's argument, then M1's body up to the placeholder,\\n        // then M2' argument.\\n    }::<fun body>::M2(x+=2)::M1(x++) -> _::M2(x+=2)::M1(x++)",
+            "{\\n        arr.push(x);\\n        _;\\n    }::M2(x+=2)::M1(x++) -> _::M1(x++)"
+       ]
+    }
+}

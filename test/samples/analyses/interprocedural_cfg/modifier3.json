@@ -3,8 +3,9 @@
         "fmt": "{0}.interproc_ctx -> {1}.interproc_ctx",
         "data": [
             " -> foo",
-            "foo -> 1::M(42)::foo()",
+            "foo -> 42::M(42)::foo()",
             "foo() -> foo()",
+            "42::M(42)::foo() -> 1::M(42)::foo()",
             "1::M(42)::foo() -> 1::M(42)::foo()",
             "1::M(42)::foo() -> 3::<fun body>::M(42)::foo()",
             "_::M(42)::foo() -> 2::M(42)::foo()",
