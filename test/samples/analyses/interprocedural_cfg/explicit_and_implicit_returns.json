@@ -1,0 +1,21 @@
+{
+    "interprocCFG.succ.edge": {
+        "fmt": "{0}.interproc_ctx -> {1}.interproc_ctx",
+        "data": [
+            " -> true",
+            "true -> foo",
+            "foo -> 0::foo(true)",
+            "foo(true) -> return foo(true)",
+            "0::foo(true) -> z::foo(true)",
+            "z::foo(true) -> z = 0::foo(true)",
+            "z = 0::foo(true) -> z = 0::foo(true)",
+            "z = 0::foo(true) -> flag::foo(true)",
+            "flag::foo(true) -> 0::foo(true)",
+            "flag::foo(true) -> if (flag) {\\n      return 0;\\n    }::foo(true)",
+            "0::foo(true) -> return 0::foo(true)",
+            "if (flag) {\\n      return 0;\\n    }::foo(true) -> {\\n    z = 0;\\n    \\n    if (flag) {\\n      return 0;\\n    }\\n  }::foo(true)",
+            "return 0::foo(true) -> foo(true)",
+            "{\\n    z = 0;\\n    \\n    if (flag) {\\n      return 0;\\n    }\\n  }::foo(true) -> foo(true)"
+        ]
+    }
+}

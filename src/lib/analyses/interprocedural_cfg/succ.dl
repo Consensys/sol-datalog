@@ -15,6 +15,7 @@
         ModifierDefinition_body(_, n, 1).
 
     // Helper to determine to which exact `ModifierDefinition` does the i-th `ModifierInvocation` in `fun` refer to in contract `inContract`
+    // This handles virtual modifiers
     .decl modInvBodyIs(fun: FunctionDefinitionId, inContract: ContractDefinitionId, idx: number, body: BlockId)
     modInvBodyIs(fun, inContract, idx, body) :-
         FunctionDefinition_modifiers(fun, modInv, idx),
@@ -24,18 +25,23 @@
         inh.resolvesTo(modDef, actualModDef, inContract),
         ModifierDefinition_body(actualModDef, body, 1).
 
+    // Helper function to compute the call list that should be apended to the current context if we enter the
+    // function `fun` in contract `inContract`.
     .decl functionCallList(fun: FunctionDefinitionId, inContract: ContractDefinitionId, callList: CallList)
+
+    // Case 1: fun doesnt have modifiers - just add the first thing in the body
     functionCallList(fun, inContract, [$Node(bodyFirst), nil]) :-
         ContractDefinition(inContract),
         !FunctionDefinition_modifiers(fun, _, _),
         FunctionDefinition_body(fun, body, 1),
         cfg.succ.succ_first(body, bodyFirst).
 
+    // Case 2: fun has modifiers - just add the first thing in the first modifier's body 
     functionCallList(fun, inContract, [$Node(bodyFirst), [$Modifier(fun, 0, -1), nil]]) :-
         modInvBodyIs(fun, inContract, 0, body),
         cfg.succ.succ_first(body, bodyFirst).
 
-    // Helper relation finding all concrete (most derived) function definitions that may be called
+    // Helper relation finding all public/external function definitions that may be called
     // when entering a given contract. Note this ignores constructors as they are handled separately
     .decl entrypointIn(fun: FunctionDefinitionId, inContract: ContractDefinitionId)
     entrypointIn(fun, inContract) :-
@@ -53,11 +59,14 @@
         entrypointIn(fun, mdc),
         functionCallList(fun, mdc, callList).
 
-    // Inherit all non-call edges from intraprocedural cfg
+    // Inherit all non-call edges from intraprocedural cfg. 
+    // Note we allow external calls here - they are considerd orthogonal to the interprocedural CFG since
+    // control flow could jump to any unknown contract.
     edge([mdc, [$Node(n1), callList]], [mdc, [$Node(n2), callList]]) :-
         edge(_, [mdc, [$Node(n1), callList]]),
         cfg.succ.edge(n1, n2),
         (!mayCallIn(n2, _, mdc) ; externalCall(n2)),
+        // Ignore placeholders - they are handled separately in the modifier rules below.
         !PlaceholderStatement(n2).
         
     // For all non-recursive calls add an edge to the
@@ -90,6 +99,7 @@
         edge(_, [mdc, [$Node(n1), callList]]),
         cfg.succ.edge(n1, n2),
         mayCallIn(n2, fun, mdc),
+        !externalCall(n2),
         @findRecursiveCall(callList, fun) != nil.
 
     // Normal return edge
@@ -122,6 +132,7 @@
         cfg.succ.succ_first(body, n2).
 
     // When encountering a place-holder if there is no next ModifierInvocation enter the function.
+    // Note we push a dummy `$Modifier(fun, -1, placeHolder)` on the callList to remember the last placeholder.
     edge(
         [mdc, [$Node(n1), [$Modifier(fun, modInvIdx, oldPlaceHolder), callList]]],
         [mdc, [$Node(bodyFirst), [$Modifier(fun, -1, placeHolder), [$Modifier(fun, modInvIdx, oldPlaceHolder), callList]]]]
@@ -143,6 +154,8 @@
         isNodeEndOfFunOrMod(n).
 
     // Modifier return when we return from the root modifier
+    // Note its ok to include `$Call(callsite, target)` in the matched context, since the only
+    // other case is when this is the modifier of the entrypoint into the contract. In this case there is no next edge.
     edge(
         [mdc, [$Node(n), [$Modifier(fun, modInvIdx, -1), [$Call(callsite, target), rest]]]],
         [mdc, [$Node(callsite), rest]]
