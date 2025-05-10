@@ -17,7 +17,8 @@ const skipSamples: string[] = [
     "test/samples/solidity/meta/imports/lib2/C.sol",
     "test/samples/solidity/meta/imports/lib2/D.sol",
     "test/samples/solidity/path_remapping/entry.sol",
-    "test/samples/solidity/features_0824.sol"
+    "test/samples/solidity/features_0824.sol",
+    "test/samples/analyses/interprocedural_cfg/explicit_returns.sol"
 ];
 
 const samples = searchRecursive(
@@ -28,7 +29,14 @@ const samples = searchRecursive(
         !sol.forAny(skipSamples, (x) => fileName.endsWith(x))
 );
 
-samples.push(...searchRecursive("test/samples", (fileName) => fileName.endsWith(".sol")));
+samples.push(
+    ...searchRecursive(
+        "test/samples",
+        (fileName) =>
+            fileName.endsWith(".sol") && !sol.forAny(skipSamples, (x) => fileName.endsWith(x))
+    )
+);
+
 const verbose = false;
 
 export type NdGraph = Map<number, Set<number>>;

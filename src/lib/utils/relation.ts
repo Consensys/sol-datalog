@@ -101,6 +101,8 @@ function liftValue(val: DL.FieldVal, type: DL.DatalogType, ctx: ASTContext): Rel
 
             while (rawCallList !== null) {
                 const head = rawCallList.head as DL.ADTVal;
+                let placeHolderId: number;
+
                 switch (head[0]) {
                     case "Node":
                         callList.push({ type: "Node", id: ctx.locate(Number(head[1].id)) });
@@ -113,13 +115,12 @@ function liftValue(val: DL.FieldVal, type: DL.DatalogType, ctx: ASTContext): Rel
                         });
                         break;
                     case "Modifier":
-                        const placeHolderId = Number(head[1].placeHolder);
-                        const placeHolder = placeHolderId === -1 ? null : ctx.locate(placeHolderId)
+                        placeHolderId = Number(head[1].placeHolder);
                         callList.push({
                             type: "Modifier",
                             id: ctx.locate(Number(head[1].id)),
                             idx: Number(head[1].idx),
-                            placeHolder
+                            placeHolder: placeHolderId === -1 ? null : ctx.locate(placeHolderId)
                         });
                         break;
                     default:
